@@ -1,0 +1,36 @@
+{
+  "name": "garda-keuangan",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3012",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3012",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/domain.test.ts",
+    "check": "npm run typecheck && npm run test",
+    "env:check": "node scripts/check-env.mjs",
+    "sheets:setup": "node --conditions=react-server --experimental-strip-types scripts/sheets-maintenance.ts setup",
+    "sheets:check": "node --conditions=react-server --experimental-strip-types scripts/sheets-maintenance.ts read",
+    "backup": "node --conditions=react-server --experimental-strip-types scripts/sheets-maintenance.ts backup",
+    "backup:validate": "node --conditions=react-server --experimental-strip-types scripts/sheets-maintenance.ts validate",
+    "backup:restore": "node --conditions=react-server --experimental-strip-types scripts/sheets-maintenance.ts restore"
+  },
+  "dependencies": {
+    "@upstash/redis": "1.39.0",
+    "google-auth-library": "11.3.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

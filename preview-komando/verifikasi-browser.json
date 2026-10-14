@@ -1,0 +1,44 @@
+{
+  "consoleErrors": [],
+  "widths": [
+    {
+      "width": 360,
+      "viewport": 360,
+      "page": 360
+    },
+    {
+      "width": 390,
+      "viewport": 390,
+      "page": 390
+    },
+    {
+      "width": 760,
+      "viewport": 760,
+      "page": 760
+    },
+    {
+      "width": 820,
+      "viewport": 820,
+      "page": 820
+    },
+    {
+      "width": 1024,
+      "viewport": 1024,
+      "page": 1024
+    },
+    {
+      "width": 1440,
+      "viewport": 1440,
+      "page": 1440
+    }
+  ],
+  "interactions": [
+    "Overpayment rejected; valid payment updates balance and overdue",
+    "Transaction search preserves focus and filters rows",
+    "Student creation works",
+    "Demo data persists after reload",
+    "Real data button requires Google authentication; demo is isolated",
+    "Mobile bottom navigation, more menu, and touch forms work",
+    "Unauthenticated access, CSRF, and credentials URL are rejected"
+  ]
+}

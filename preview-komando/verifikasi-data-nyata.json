@@ -1,0 +1,13 @@
+{
+  "realSheetsRead": "passed",
+  "setupTables": 12,
+  "realStudents": 0,
+  "realTransactions": 0,
+  "demoImported": false,
+  "ownerAccess": "passed",
+  "unlistedEmailDenied": true,
+  "modeSwitchIsolated": true,
+  "googleOAuthRedirectLogin": "requires OAuth credentials; not tested live",
+  "realFinancialWrites": "requires Redis credentials and activation; not tested live",
+  "identityForReadTest": "synthetic signed local session; no production auth bypass added"
+}

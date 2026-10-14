@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "flows": [
+    "student and enrollment",
+    "package invoice with three stages",
+    "partial payment",
+    "monthly invoice preview",
+    "expense",
+    "atomic transfer",
+    "refund with credit adjustment",
+    "adjustment reversal",
+    "transaction reversal",
+    "CSV export",
+    "historical report",
+    "period closing and rejection",
+    "all six pages at 360px"
+  ],
+  "browserErrors": []
+}

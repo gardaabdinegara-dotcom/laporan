@@ -1,0 +1,21 @@
+# Google service account keys and local secrets
+credentials.json
+credentials*.json
+*service-account*.json
+.env
+.env.*
+!.env.example
+
+# Generated application and deployment files
+node_modules/
+.next/
+out/
+.vercel/
+
+# Local inspection helpers
+.codex/
+
+# TypeScript build cache and private finance backups
+*.tsbuildinfo
+backups/
+*backup*.json

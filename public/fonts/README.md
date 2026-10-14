@@ -1,0 +1,1 @@
+Fonts: DM Sans and Manrope. Source: Google Fonts (fonts.googleapis.com / fonts.gstatic.com). Both are distributed under the SIL Open Font License. The OFL text is included in OFL-DM-Sans.txt and OFL-Manrope.txt. Local files avoid requests to external font services at runtime.

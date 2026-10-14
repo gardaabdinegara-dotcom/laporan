@@ -1,0 +1,16 @@
+{
+  "archive": "garda-keuangan-siap-deploy.zip",
+  "size_bytes": 880114,
+  "file_count": 43,
+  "zip_integrity": "passed",
+  "credentials_unchanged": true,
+  "presensi_source_unchanged": true,
+  "secret_material_in_client": false,
+  "secret_material_in_archive": false,
+  "production_build": "passed",
+  "domain_tests": 26,
+  "browser_tests": "passed",
+  "real_source_transactions": 0,
+  "real_source_students": 0,
+  "deployed": false
+}
