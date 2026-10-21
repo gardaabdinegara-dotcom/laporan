@@ -11,16 +11,21 @@ function base64(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-/** Vector text/tables, independent of viewport size, scroll position, and theme. */
-export function renderReportPdf(model: ReportDocument, fonts: PdfFonts) {
-  const doc = new jsPDF({ orientation: model.landscape ? "landscape" : "portrait", unit: "mm", format: "a4", compress: true, putOnlyUsedFonts: true });
+export function createReportPdf(fonts: PdfFonts, landscape = false) {
+  const doc = new jsPDF({ orientation: landscape ? "landscape" : "portrait", unit: "mm", format: "a4", compress: true, putOnlyUsedFonts: true });
   doc.addFileToVFS("TerraceReport-Regular.ttf", base64(fonts.regular));
   doc.addFont("TerraceReport-Regular.ttf", "TerraceReport", "normal");
   doc.addFileToVFS("TerraceReport-Bold.ttf", base64(fonts.bold));
   doc.addFont("TerraceReport-Bold.ttf", "TerraceReport", "bold");
   doc.setFont("TerraceReport", "normal");
-  doc.setProperties({ title: model.title + " | " + model.business, subject: model.period + " | " + model.status, author: model.business, creator: "Garda Keuangan" });
   doc.setLanguage("id");
+  return doc;
+}
+
+/** Append to a fresh page; the book renderer can supply one global page count. */
+export function appendReportPages(doc: jsPDF, model: ReportDocument, pageNumbers = true) {
+  const startPage = doc.getNumberOfPages();
+  doc.setPage(startPage);
   const width = doc.internal.pageSize.getWidth(), height = doc.internal.pageSize.getHeight(), margin = 15, contentWidth = width - margin * 2;
   const bottom = height - 21;
   doc.setFontSize(10);
@@ -32,7 +37,7 @@ export function renderReportPdf(model: ReportDocument, fonts: PdfFonts) {
   const top = 14 + businessLines.length * 4.5 + 2 + titleLines.length * 6 + 1 + periodLines.length * 4 + 10;
   let y = top + 3;
 
-  function newPage() { doc.addPage(); y = top + 3; }
+  function newPage() { doc.addPage("a4", model.landscape ? "landscape" : "portrait"); y = top + 3; }
   function reserve(mm: number) { if (y + mm > bottom) newPage(); }
   function paragraph(value: string, size = 8.2, color = muted) {
     doc.setFont("TerraceReport", "normal"); doc.setFontSize(size); doc.setTextColor(color);
@@ -113,7 +118,7 @@ export function renderReportPdf(model: ReportDocument, fonts: PdfFonts) {
 
   // Draw once per physical page after pagination so every footer has a true total.
   const pages = doc.getNumberOfPages();
-  for (let page = 1; page <= pages; page++) {
+  for (let page = startPage; page <= pages; page++) {
     doc.setPage(page);
     doc.setFont("TerraceReport", "bold"); doc.setFontSize(10); doc.setTextColor(ink);
     let headerY = 14;
@@ -131,8 +136,16 @@ export function renderReportPdf(model: ReportDocument, fonts: PdfFonts) {
     doc.setFont("TerraceReport", "normal"); doc.setFontSize(7); doc.setTextColor(muted);
     const footer: string[] = doc.splitTextToSize(clean(model.source + " | Data: " + model.dataTime + " | Terbit: " + model.issued), contentWidth - 29);
     doc.text(footer.slice(0, 2), margin, height - 11, { lineHeightFactor: 1.2 });
-    doc.text("Halaman " + page + " / " + pages, width - margin, height - 11, { align: "right" });
+    if (pageNumbers) doc.text("Halaman " + (page - startPage + 1) + " / " + (pages - startPage + 1), width - margin, height - 11, { align: "right" });
   }
+  return { startPage, pageCount: pages - startPage + 1 };
+}
+
+/** Vector text/tables, independent of viewport size, scroll position, and theme. */
+export function renderReportPdf(model: ReportDocument, fonts: PdfFonts) {
+  const doc = createReportPdf(fonts, model.landscape);
+  doc.setProperties({ title: model.title + " | " + model.business, subject: model.period + " | " + model.status, author: model.business, creator: "Garda Keuangan" });
+  appendReportPages(doc, model);
   return new Uint8Array(doc.output("arraybuffer"));
 }
 

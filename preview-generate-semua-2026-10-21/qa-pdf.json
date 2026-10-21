@@ -1,0 +1,88 @@
+{
+  "annual": {
+    "name": "browser-owner-2025",
+    "pages": 24,
+    "toc_targets": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      11,
+      24
+    ],
+    "bookmarks": 9,
+    "bytes": 107555,
+    "cash_references": 178,
+    "landscape_pages": [
+      5,
+      6,
+      7,
+      8
+    ]
+  },
+  "prior_year": {
+    "name": "browser-2024-draft",
+    "pages": 27,
+    "toc_targets": [
+      3,
+      4,
+      6,
+      8,
+      12,
+      14,
+      27
+    ],
+    "bookmarks": 9,
+    "bytes": 76850
+  },
+  "mobile": {
+    "name": "browser-mobile-light-2025",
+    "pages": 24,
+    "toc_targets": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      11,
+      24
+    ],
+    "bookmarks": 9,
+    "bytes": 107555
+  },
+  "fixtures": [
+    {
+      "name": "fixture-viewer",
+      "pages": 11,
+      "toc_targets": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "bookmarks": 9,
+      "bytes": 56105
+    },
+    {
+      "name": "fixture-empty-draft",
+      "pages": 26,
+      "toc_targets": [
+        3,
+        4,
+        6,
+        8,
+        11,
+        13,
+        26
+      ],
+      "bookmarks": 9,
+      "bytes": 75019
+    }
+  ],
+  "single_bank_pages": 13,
+  "errors": []
+}

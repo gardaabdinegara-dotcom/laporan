@@ -794,3 +794,49 @@ bayar. Header tabel berulang dan tanda tangan tidak terpotong antar halaman.
 PDF dibuat lokal di browser dengan font yang disertakan aplikasi, tanpa layanan
 PDF eksternal. Antarmuka tetap Terrace light/dark pada desktop dan ponsel;
 dokumen unduhan memakai halaman putih.
+
+## 24. Contoh setahun dan penyempurnaan PDF - 21 Oktober 2026
+
+Pengguna meminta data contoh selama satu tahun agar seluruh hasil Generate
+Laporan dapat ditinjau dengan format yang lebih rapi dari referensi.
+
+- Workspace simulasi Januari–Desember 2025 mempunyai transaksi nyata secara
+  struktur, dengan identitas/nominal fiktif dan saldo pembukaan yang konsisten.
+  Pembayaran siswa terhubung ke tagihan; pembelian aset terhubung ke kas satu kali;
+  jurnal nonkas dan pembayaran pajak menggunakan periode kewajiban terpisah.
+- Pilihan **Muat contoh setahun 2025** pada Laporan memakai penyimpanan browser
+  tersendiri. Contoh singkat beserta perubahan pengguna tetap tersedia. Berpindah
+  contoh dan reload mempertahankan pemisahan kedua workspace.
+- Laporan awal langsung menampilkan periode Tahunan 2025. Pengguna dapat memilih
+  jenis, bulan, rentang, atau rekening sebelum mengunduh PDF.
+- Buku kas PDF dipisah per bulan dengan ringkasan akhir; laba rugi diberi subtotal;
+  register dan dua semester aset masing-masing mendapat halaman landscape.
+  Pembayaran pajak ditampilkan menurut tanggal bayar.
+- Sampul, daftar isi interaktif, ringkasan, dan grafik tahunan disertakan pada
+  pratinjau gabungan awal. Otomasi paket pada aplikasi dijabarkan pada bagian 25.
+- Data tetap ditandai simulasi. Tidak ada impor ke spreadsheet operasional,
+  pengubahan kebijakan akuntansi/pajak nyata, atau koreksi otomatis selisih pada
+  referensi.
+
+## 25. Generate Semua Laporan - 21 Oktober 2026
+
+Pengguna meminta satu tombol untuk mengunduh buku laporan setahun lengkap.
+
+- Tombol **Generate Semua Laporan** tersedia di samping ekspor laporan satuan.
+  Periode harus tepat satu tahun kalender; bulan, tahun kosong, serta rentang
+  sebagian/lintas tahun menonaktifkan paket dan menampilkan petunjuk periode.
+- Isi: sampul, daftar isi interaktif, ringkasan/grafik 12 bulan, laba rugi,
+  neraca, aset dan dua semester penyusutan, omzet/pajak, buku kas bulanan,
+  serta pemeriksaan antar laporan. Orientasi tabel mengikuti laporan satuan.
+- Paket memakai seluruh kas/bank, satu snapshot data dan waktu penerbitan,
+  nomor halaman global, serta daftar isi/bookmark sesuai halaman fisik aktual.
+  Saldo akhir ringkasan adalah posisi Desember, bukan jumlah saldo bulanan.
+  Tambahan saldo pembukaan akun tidak dianggap sebagai penerimaan.
+- Pembatasan VIEWER berlaku pada seluruh paket. Pajak belum lengkap tetap
+  kosong secara makna, Draf/Proyeksi/Data contoh tetap tercantum, dan selisih
+  nol tidak menghapus kekurangan dasar/pemetaan/pembukaan/tarif.
+- Unduhan dibuat di browser memakai font lokal. Ekspor tidak menambah transaksi
+  atau mengubah sumber. Tombol laporan satuan, CSV, dan Cetak tetap tersedia;
+  aksi unduhan PDF yang sedang berjalan tidak digandakan.
+- Terrace light/dark dipertahankan pada desktop dan ponsel. PDF memakai halaman
+  putih, tabel berulang, catatan pemeriksaan, dan ruang tanda tangan.

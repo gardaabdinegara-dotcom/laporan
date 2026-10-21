@@ -6,6 +6,12 @@
 .reports-intro h2{font-size:25px;letter-spacing:-.9px;font-weight:550;margin:9px 0;color:var(--hero-ink)}
 .reports-intro p{font-size:12px;color:var(--hero-muted);margin:0;line-height:1.8}
 .reports-intro>.btn{flex-shrink:0}
+.demo-year-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;margin-bottom:20px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.demo-year-banner strong{font-size:13px;color:var(--ink)}
+.demo-year-banner p{font-size:12px;color:var(--secondary);line-height:1.7;margin:7px 0}
+.demo-year-banner small{font-size:10px;color:var(--muted);line-height:1.6;display:block}
+.demo-year-banner>.btn{flex-shrink:0}
+@media(max-width:700px){.demo-year-banner{align-items:stretch;flex-direction:column;padding:17px}.demo-year-banner>.btn{justify-content:center;width:100%}}
 .report-tabs,.manage-tabs{display:flex;gap:7px;overflow-x:auto;padding:3px 2px 12px;scrollbar-width:thin;max-width:100%}
 .report-tabs button,.manage-tabs button{color:var(--secondary);background:transparent;white-space:nowrap;border:1px solid transparent;border-radius:24px;min-height:43px;padding:10px 15px;font-size:12px}
 .report-tabs button[aria-pressed=true]{color:var(--on-primary);background:var(--primary)}
@@ -15,6 +21,7 @@
 .report-controls .field input,.report-controls .field select{width:100%;min-height:44px;padding:10px 12px;font-size:12px;box-sizing:border-box}
 .report-export{display:flex;flex-wrap:wrap;gap:9px;margin-left:auto;max-width:100%}
 .report-download-hint{font-size:11px;line-height:1.7;color:var(--muted);margin:-9px 0 18px}
+.report-download-hint p{margin:4px 0}
 .report-generate[aria-busy=true]{cursor:progress}
 .report-document{padding:30px 32px;min-width:0}
 .report-document-heading{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;padding-bottom:23px;border-bottom:1px solid var(--line)}

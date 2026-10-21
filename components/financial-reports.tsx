@@ -4,12 +4,13 @@ import Icon from "./icon";
 import { dateLabel, endOfMonth, money, num, setting, text, today, type Actor, type Row, type State } from "../lib/domain";
 import { CREDIT_ACCOUNTS, EXPENSE_ACCOUNTS, JOURNAL_ACCOUNTS, MAPPING_ACCOUNTS, OPENING_ACCOUNTS, REPORT_ACCOUNTS, assetPeriodExpense, cashbook, financialStatements, mappingAt, openingDerived, openingRows, reportCSV, reportSetting, reportingAnchor, taxReport, type ReportAccount } from "../lib/reporting";
 import { buildReportDocument, validReportRange } from "../lib/report-document";
+import { annualYearFromRange, buildAnnualReport } from "../lib/report-book";
 
 type Kind = "cash" | "profit" | "balance" | "assets" | "tax" | "checks" | "overview";
 type Manage = "profile" | "mapping" | "opening" | "asset" | "journal" | "tax" | "payment";
 const kinds: [Kind, string][] = [["cash", "Buku kas"], ["profit", "Laba rugi"], ["balance", "Neraca"], ["assets", "Aset & penyusutan"], ["tax", "Omzet & pajak"], ["checks", "Pemeriksaan"], ["overview", "Ringkasan kas"]];
 const management: [Manage, string][] = [["profile", "Dasar laporan"], ["mapping", "Kategori"], ["opening", "Saldo awal"], ["asset", "Aset"], ["journal", "Jurnal nonkas"], ["tax", "Tarif pajak"], ["payment", "Pembayaran pajak"]];
-type Props = { data: State; actor: Actor; month: string; canWrite: boolean; busy: boolean; simulation: boolean; dataAsOf: string; execute: (action: string, payload: Record<string, unknown>) => Promise<boolean>; children: ReactNode };
+type Props = { data: State; actor: Actor; month: string; canWrite: boolean; busy: boolean; simulation: boolean; dataAsOf: string; sampleYear?: string; onDemoScenario?: (annual: boolean) => void; execute: (action: string, payload: Record<string, unknown>) => Promise<boolean>; children: ReactNode };
 function Field({ label, children, wide = false, hint }: { label: string; children: ReactNode; wide?: boolean; hint?: string }) {
   return <label className={"field" + (wide ? " full" : "")}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
@@ -21,13 +22,14 @@ function exportFile(content: string, name: string) {
   const link = document.createElement("a"); link.href = url; link.download = name; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export default function FinancialReports({ data, actor, month, canWrite, busy, simulation, dataAsOf, execute, children }: Props) {
+export default function FinancialReports({ data, actor, month, canWrite, busy, simulation, dataAsOf, sampleYear, onDemoScenario, execute, children }: Props) {
   const [kind, setKind] = useState<Kind>("cash");
-  const [period, setPeriod] = useState("month"), [selectedMonth, setSelectedMonth] = useState(month), [year, setYear] = useState(month.slice(0, 4));
+  const [period, setPeriod] = useState(sampleYear ? "year" : "month"), [selectedMonth, setSelectedMonth] = useState(month), [year, setYear] = useState(month.slice(0, 4));
   const [customFrom, setCustomFrom] = useState(month + "-01"), [customTo, setCustomTo] = useState(endOfMonth(month));
   const [accountId, setAccountId] = useState(""), [manager, setManager] = useState<Manage | null>(null), [notice, setNotice] = useState("");
   const [formError, setFormError] = useState(""), [saving, setSaving] = useState(false), [editingAsset, setEditingAsset] = useState<Row | null>(null);
-  const [generatingPdf, setGeneratingPdf] = useState(false), [pdfError, setPdfError] = useState("");
+  const [pdfJob, setPdfJob] = useState<"single" | "all" | null>(null), [pdfError, setPdfError] = useState("");
+  const generatingPdf = pdfJob !== null;
   const [assetSource, setAssetSource] = useState("TRANSAKSI"), [assetTransaction, setAssetTransaction] = useState("");
   const [openingInput, setOpeningInput] = useState<Record<string, string>>({});
   const [journalLines, setJournalLines] = useState([{ account: "PIUTANG", debit: "", credit: "" }, { account: "PENDAPATAN", debit: "", credit: "" }]);
@@ -36,11 +38,16 @@ export default function FinancialReports({ data, actor, month, canWrite, busy, s
   const printCleanup = useRef<(() => void) | null>(null);
   const pdfInFlight = useRef(false);
   useEffect(() => { setSelectedMonth(month); setYear(month.slice(0, 4)); }, [month]);
+  useEffect(() => {
+    setPeriod(sampleYear ? "year" : "month");
+    if (sampleYear) { setYear(sampleYear); setCustomFrom(sampleYear + "-01-01"); setCustomTo(sampleYear + "-12-31"); }
+  }, [sampleYear]);
   useEffect(() => { setNotice(""); setPdfError(""); }, [kind, period, selectedMonth, year, customFrom, customTo, accountId]);
   useEffect(() => () => { printCleanup.current?.(); }, []);
   const from = period === "year" ? year + "-01-01" : period === "custom" ? customFrom : selectedMonth + "-01";
   const to = period === "year" ? year + "-12-31" : period === "custom" ? customTo : endOfMonth(selectedMonth);
   const validRange = validReportRange(from, to);
+  const annualYear = annualYearFromRange(from, to);
   const safeFrom = validRange ? from : selectedMonth + "-01", safeTo = validRange ? to : endOfMonth(selectedMonth);
   const report = useMemo(() => financialStatements(data, safeFrom, safeTo), [data, safeFrom, safeTo]);
   const book = useMemo(() => cashbook(data, safeFrom, safeTo, accountId), [data, safeFrom, safeTo, accountId]);
@@ -114,24 +121,27 @@ export default function FinancialReports({ data, actor, month, canWrite, busy, s
     window.addEventListener("afterprint", cleanup);
     try { window.print(); } catch { cleanup(); setNotice("Buka menu cetak browser untuk menyimpan laporan sebagai PDF."); }
   }
-  async function generatePdf() {
-    if (!validRange || kind === "overview" || pdfInFlight.current) return;
-    pdfInFlight.current = true; setGeneratingPdf(true); setPdfError(""); setNotice("");
+  async function generatePdf(allReports = false) {
+    if (!validRange || kind === "overview" || pdfInFlight.current || (allReports && !annualYear)) return;
+    pdfInFlight.current = true; setPdfJob(allReports ? "all" : "single"); setPdfError(""); setNotice("");
     try {
       // Capture the requested data and selection before loading the PDF renderer.
-      const documentSnapshot = buildReportDocument(data, { kind, from, to, accountId, role: actor.role, simulation, dataAsOf });
+      const request = allReports
+        ? { type: "all" as const, model: buildAnnualReport(data, { year: annualYear!, role: actor.role, simulation, dataAsOf }) }
+        : { type: "single" as const, model: buildReportDocument(data, { kind, from, to, accountId, role: actor.role, simulation, dataAsOf }) };
       const { loadReportFonts, renderReportPdf } = await import("../lib/report-pdf");
-      const bytes = renderReportPdf(documentSnapshot, await loadReportFonts());
+      const fonts = await loadReportFonts();
+      const bytes = request.type === "all" ? (await import("../lib/report-book-pdf")).renderAnnualReportPdf(request.model, fonts) : renderReportPdf(request.model, fonts);
       const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
       const link = document.createElement("a");
-      link.href = url; link.download = documentSnapshot.filename;
+      link.href = url; link.download = request.model.filename;
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      setNotice("PDF " + documentSnapshot.title + " siap diunduh: " + documentSnapshot.filename);
+      setNotice("PDF " + request.model.title + " siap diunduh: " + request.model.filename);
     } catch (error) {
       setPdfError(error instanceof Error ? error.message : "PDF belum dapat dibuat. Coba lagi.");
     } finally {
-      pdfInFlight.current = false; setGeneratingPdf(false);
+      pdfInFlight.current = false; setPdfJob(null);
     }
   }
   function line(account: ReportAccount, amount = report.period[account], total = false) {
@@ -147,20 +157,25 @@ export default function FinancialReports({ data, actor, month, canWrite, busy, s
       <div><span className="reports-kicker">KEUANGAN YANG TERHUBUNG</span><h2>Satu catatan, semua laporan.</h2><p>Telusuri transaksi, lihat hasil usaha, dan siapkan laporan periodik.</p></div>
       {owner && <button className="btn primary" onClick={() => beginManage(manager ? manager : "profile")}><Icon name="settings" />Kelola laporan</button>}
     </div>
+    {simulation && onDemoScenario && <aside className="demo-year-banner no-report-print">
+      <div><strong>{sampleYear ? "Simulasi satu tahun aktif · " + sampleYear : "Lihat laporan dengan data satu tahun"}</strong><p>{sampleYear ? data.Siswa.length + " siswa fiktif · " + data.Transaksi.length + " baris kas · " + data.Aset.length + " aset · Januari–Desember " + sampleYear : "Coba transaksi bimbel, cicilan, biaya rutin, aset, penyusutan, dan pajak selama Januari–Desember 2025."}</p><small>Contoh tersimpan terpisah di browser. Spreadsheet nyata tidak berubah.</small></div>
+      <button className="btn" disabled={busy || generatingPdf} onClick={() => onDemoScenario(!sampleYear)}>{sampleYear ? "Kembali ke contoh singkat" : "Muat contoh setahun 2025"}</button>
+    </aside>}
     <nav className="report-tabs no-report-print" aria-label="Jenis laporan">{kinds.map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} onClick={() => { setKind(id); setDetailAccount(null); }}>{label}</button>)}</nav>
     {kind !== "overview" && <div className="report-controls no-report-print">
       <Field label="Periode"><select aria-label="Jenis periode laporan" value={period} onChange={e => setPeriod(e.target.value)}><option value="month">Bulanan</option><option value="year">Tahunan</option><option value="custom">Rentang tanggal</option></select></Field>
       {period === "month" && <Field label="Bulan"><input aria-label="Bulan laporan" type="month" value={selectedMonth} onInput={e => e.currentTarget.value && setSelectedMonth(e.currentTarget.value)} onChange={e => e.target.value && setSelectedMonth(e.target.value)} /></Field>}
-      {period === "year" && <Field label="Tahun"><input aria-label="Tahun laporan" type="number" min="1900" max="9998" value={year} onChange={e => setYear(e.target.value)} /></Field>}
+      {period === "year" && <Field label="Tahun"><input aria-label="Tahun laporan" type="number" min="1900" max="9998" value={year} onInput={e => setYear(e.currentTarget.value)} onChange={e => setYear(e.target.value)} /></Field>}
       {period === "custom" && <><Field label="Dari"><input aria-label="Awal periode laporan" type="date" value={customFrom} onInput={e => setCustomFrom(e.currentTarget.value)} onChange={e => setCustomFrom(e.target.value)} /></Field><Field label="Sampai"><input aria-label="Akhir periode laporan" type="date" value={customTo} onInput={e => setCustomTo(e.currentTarget.value)} onChange={e => setCustomTo(e.target.value)} /></Field></>}
       {kind === "cash" && <Field label="Kas / rekening"><select aria-label="Akun buku kas" value={accountId} onChange={e => setAccountId(e.target.value)}><option value="">Semua kas & bank</option>{data.Akun.map(a => <option key={text(a, "akun_id")} value={text(a, "akun_id")}>{text(a, "nama_akun")}</option>)}</select></Field>}
       <div className="report-export">
-        <button className="btn primary report-generate" disabled={!validRange || generatingPdf} aria-busy={generatingPdf} onClick={() => void generatePdf()}><Icon name="download" />{generatingPdf ? "Menyiapkan PDF…" : "Generate Laporan"}</button>
+        <button className="btn primary report-generate" disabled={!annualYear || generatingPdf} aria-busy={pdfJob === "all"} aria-describedby="annual-report-hint" onClick={() => void generatePdf(true)}><Icon name="download" />{pdfJob === "all" ? "Menyiapkan PDF tahunan…" : "Generate Semua Laporan"}</button>
+        <button className="btn report-generate" disabled={!validRange || generatingPdf} aria-busy={pdfJob === "single"} onClick={() => void generatePdf()}><Icon name="download" />{pdfJob === "single" ? "Menyiapkan PDF…" : "Generate Laporan"}</button>
         <button className="btn" disabled={!validRange} onClick={exportReport}>CSV</button>
         <button className="btn" disabled={!validRange} onClick={printReport}><Icon name="print" />Cetak</button>
       </div>
     </div>}
-    {kind !== "overview" && <p className="report-download-hint no-report-print">Generate Laporan mengunduh PDF sesuai jenis, periode, dan akun yang dipilih.</p>}
+    {kind !== "overview" && <div className="report-download-hint no-report-print"><p id="annual-report-hint">{annualYear ? "Generate Semua Laporan: satu PDF tahun " + annualYear + " dengan sampul, daftar isi, grafik, dan enam laporan untuk seluruh kas & bank." : "Untuk Generate Semua Laporan, pilih periode Tahunan atau rentang 1 Januari–31 Desember pada tahun yang sama."}</p><p>Generate Laporan mengunduh PDF sesuai jenis, periode, dan akun yang dipilih.</p></div>}
     {!validRange && <p role="alert" className="form-error">Pilih rentang tanggal yang valid, maksimum 10 tahun.</p>}
     {pdfError && <p role="alert" className="form-error no-report-print">{pdfError}</p>}
     {notice && <p role="status" className="report-notice no-report-print">{notice}</p>}

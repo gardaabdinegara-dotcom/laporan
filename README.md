@@ -90,6 +90,7 @@ Dashboard memakai basis kas. Laporan laba rugi dan neraca memakai dasar **kas de
 5. **Jurnal nonkas** mencatat penyesuaian pendapatan, piutang, uang muka, dan kewajiban. Debit harus sama dengan kredit. Koreksi melalui pembalik dengan tanggal efektif dan alasan.
 6. Untuk rekap pajak, tetapkan **Dasar omzet pajak** dan versi **Tarif pajak** sesuai kondisi usaha. **Pembayaran pajak** menautkan transaksi biaya ke tahun/bulan kewajiban; pelunasan utang tidak menambah beban kedua.
 7. Pilih laporan dan periode bulanan/tahunan/rentang tanggal. Untuk Buku kas, pilih gabungan akun atau satu rekening. Tekan **Generate Laporan** untuk langsung mengunduh PDF; **CSV** mengunduh data tabel dan **Cetak** membuka dialog cetak browser. Gunakan **Pemeriksaan** untuk menelusuri selisih. VIEWER mendapat ringkasan kas/pajak tanpa rincian transaksi pada PDF dan CSV.
+8. Untuk satu buku lengkap, pilih **Tahunan → tahun yang diinginkan → Generate Semua Laporan**. Rentang khusus 1 Januari–31 Desember pada tahun yang sama juga diterima. Paket mencakup **seluruh kas dan bank**, meskipun rekening tertentu sedang dipilih untuk laporan satuan.
 
 Data yang belum mempunyai dasar, pemetaan, pembukaan, atau tarif yang diperlukan diberi status **Draf**. Rentang yang berakhir setelah hari ini diberi penanda proyeksi. Cetak memakai palet putih; tabel aset memakai kertas landscape, header berulang, nomor halaman, dan ruang tanda tangan. Pilihan mode terang/gelap tetap berlaku pada seluruh formulir.
 
@@ -107,7 +108,47 @@ layanan PDF eksternal. File PDF tetap memakai halaman putih, identitas usaha,
 periode, tabel berulang saat berganti halaman, nomor halaman, catatan pemeriksaan,
 dan ruang tanda tangan. Tidak memerlukan pengaturan layanan PDF di server.
 
-Angka dari PDF contoh hanya dipakai pada fixture pengujian terisolasi. Contoh itu menghasilkan saldo akhir buku kas Rp14.940.000, berbeda Rp800.000 dari neraca contoh; aplikasi tidak mengimpor atau menyeimbangkan selisih tersebut otomatis.
+Angka PDF referensi tidak diimpor ke spreadsheet operasional. Fixture pengujian merekam saldo akhir buku kas Rp14.940.000, berbeda Rp800.000 dari neraca referensi; aplikasi tidak menyeimbangkan selisih tersebut otomatis. Contoh setahun berikut memakai dataset simulasi baru yang konsisten.
+
+## Contoh satu tahun 2025
+
+Pada **Laporan**, tekan **Muat contoh setahun 2025**. Pilihan laporan otomatis
+memakai **Tahunan → 2025**. Pilih jenis laporan lalu **Generate Laporan** untuk
+mengunduh PDF Januari–Desember. **Kembali ke contoh singkat** membuka kembali
+workspace contoh sebelumnya. Kedua contoh mempunyai penyimpanan browser terpisah
+dan bertahan setelah reload; data tidak dikirim ke spreadsheet operasional.
+
+Contoh tahunan berisi **16 siswa fiktif, 60 tagihan, 178 baris kas, dan 9 aset**.
+Ada SPP bulanan, paket/cicilan, honor, gaji, sewa, utilitas, pemeliharaan,
+pemasaran, transfer internal, pembelian aset, penyusutan, serta pembayaran pajak.
+Saldo awal aset dihitung sejak bulan perolehan. Pajak 2024 yang dibayar pada
+2025 dipisahkan dari beban/perhitungan 2025. Tarif 0,50% adalah asumsi simulasi.
+
+Hasil simulasi: pendapatan Rp134.500.000, laba bersih Rp5.908.750, saldo akhir
+kas/bank Rp30.617.500, dan total aset/ekuitas Rp61.872.708. Saldo awal kas
+Rp19.820.000; kas keluar Rp123.702.500 sudah termasuk pembelian aset dan
+pelunasan utang pajak tahun sebelumnya. Angka ini membentuk contoh baru yang
+konsisten, bukan penyalinan seluruh angka referensi atau saldo nyata.
+
+PDF Buku kas menempatkan setiap bulan pada halaman tersendiri dan menutup dengan
+ringkasan periode. Laba rugi mempunyai subtotal yang lebih jelas. Daftar aset
+serta tiap semester penyusutan memakai halaman landscape tersendiri. Riwayat
+pembayaran pajak diurutkan berdasarkan tanggal bayar.
+
+**Generate Semua Laporan** kini membuat satu PDF lengkap langsung di aplikasi:
+sampul tersendiri, daftar isi interaktif, ringkasan/grafik arus kas 12 bulan,
+laba rugi, neraca, aset/penyusutan, omzet/pajak, buku kas, dan pemeriksaan.
+Nomor halaman global, rentang halaman daftar isi, serta bookmark PDF mengikuti
+hasil pagination; jumlah halaman dapat berbeda sesuai data dan akses pengguna.
+Tombol laporan satuan tetap tersedia. Kedua tombol mencegah unduhan bersamaan
+dan menampilkan kegagalan yang dapat dicoba ulang.
+
+Contoh hasil tombol baru berisi **24 halaman** pada
+output/pdf/Simulasi-Semua-Laporan-Garda-2025.pdf. Contoh gabungan manual awal
+23 halaman di output/pdf/Simulasi-Laporan-Keuangan-Garda-2025.pdf tetap disimpan
+sebagai versi sebelumnya. Ekspor tidak mengubah data atau mengirimkannya ke
+layanan PDF eksternal. Terrace light/dark berlaku pada antarmuka, sedangkan PDF
+memakai palet putih dengan aksen hijau.
 
 ## Perbaikan 15 Oktober 2026
 

@@ -1,0 +1,26 @@
+[
+  {
+    "kind": "cash",
+    "path": "E:\\Downloads\\garda-buku-kas-2025-01-01_2025-12-31.pdf"
+  },
+  {
+    "kind": "profit",
+    "path": "E:\\Downloads\\garda-laba-rugi-2025-01-01_2025-12-31.pdf"
+  },
+  {
+    "kind": "balance",
+    "path": "E:\\Downloads\\garda-neraca-2025-01-01_2025-12-31.pdf"
+  },
+  {
+    "kind": "assets",
+    "path": "E:\\Downloads\\garda-aset-penyusutan-2025-01-01_2025-12-31.pdf"
+  },
+  {
+    "kind": "tax",
+    "path": "E:\\Downloads\\garda-omzet-pajak-2025-01-01_2025-12-31 (1).pdf"
+  },
+  {
+    "kind": "checks",
+    "path": "E:\\Downloads\\garda-pemeriksaan-2025-01-01_2025-12-31.pdf"
+  }
+]

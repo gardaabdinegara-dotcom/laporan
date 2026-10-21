@@ -1,0 +1,96 @@
+{
+  "responsive": [
+    {
+      "theme": "dark",
+      "width": 320,
+      "bannerWidth": 277,
+      "page": 305,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 320
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "bannerWidth": 339,
+      "page": 375,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 390
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "bannerWidth": 711,
+      "page": 753,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 768
+    },
+    {
+      "theme": "dark",
+      "width": 1280,
+      "bannerWidth": 1163.8125,
+      "page": 1265,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 1280
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "bannerWidth": 277,
+      "page": 305,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 320
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "bannerWidth": 339,
+      "page": 375,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 390
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "bannerWidth": 711,
+      "page": 753,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 768
+    },
+    {
+      "theme": "light",
+      "width": 1280,
+      "bannerWidth": 1163.8125,
+      "page": 1265,
+      "range": "Garda Abdi NegaraLaba rugi1 Jan 2025 — 31 Des 2025DATA CONTOH · Siap diperiksa",
+      "viewport": 1280
+    }
+  ],
+  "briefPreserved": "Saldo awalRp3.000.000PemasukanRp2.750.000PengeluaranRp300.000Saldo akhirRp5.450.000",
+  "downloads": [
+    {
+      "kind": "cash",
+      "path": "E:\\Downloads\\garda-buku-kas-2025-01-01_2025-12-31.pdf"
+    },
+    {
+      "kind": "profit",
+      "path": "E:\\Downloads\\garda-laba-rugi-2025-01-01_2025-12-31.pdf"
+    },
+    {
+      "kind": "balance",
+      "path": "E:\\Downloads\\garda-neraca-2025-01-01_2025-12-31.pdf"
+    },
+    {
+      "kind": "assets",
+      "path": "E:\\Downloads\\garda-aset-penyusutan-2025-01-01_2025-12-31.pdf"
+    },
+    {
+      "kind": "tax",
+      "path": "E:\\Downloads\\garda-omzet-pajak-2025-01-01_2025-12-31 (1).pdf"
+    },
+    {
+      "kind": "checks",
+      "path": "E:\\Downloads\\garda-pemeriksaan-2025-01-01_2025-12-31.pdf"
+    }
+  ],
+  "console": []
+}

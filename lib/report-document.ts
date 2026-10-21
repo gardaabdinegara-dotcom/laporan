@@ -118,15 +118,16 @@ export function buildReportDocument(data: State, options: PdfReportOptions): Rep
         const part = cashbook(data, start, end, accountId);
         model.tables.push({
           title: monthLabel(month),
+          pageBreak: month !== from.slice(0, 7),
           columns: [{ label: "Tanggal", weight: 1.05 }, { label: "Keterangan / akun", weight: 3 }, { label: "Pemasukan (Rp)", weight: 1.35, numeric: true }, { label: "Pengeluaran (Rp)", weight: 1.35, numeric: true }, { label: "Saldo (Rp)", weight: 1.45, numeric: true }],
           rows: [
             row([dateLabel(start), "Saldo awal periode", "-", "-", pdfAmount(part.opening)], "total"),
-            ...part.lines.map(l => row([dateLabel(l.date), (l.description || "Transaksi") + "\n" + l.account + (l.internal ? " | Transfer internal, neto nol" : l.opening ? " | Pembukaan akun" : "") + "\nRef: " + (l.reference || l.id), l.incoming ? pdfAmount(l.incoming) : "-", l.outgoing ? pdfAmount(l.outgoing) : "-", pdfAmount(l.balance)])),
+            ...part.lines.map(l => row([dateLabel(l.date), (l.description || "Transaksi") + "\n" + l.account + (l.internal ? " | Transfer internal, neto nol" : l.opening ? " | Pembukaan akun" : "") + " | Ref: " + (l.reference || l.id), l.incoming ? pdfAmount(l.incoming) : "-", l.outgoing ? pdfAmount(l.outgoing) : "-", pdfAmount(l.balance)])),
             row([dateLabel(end), "Saldo akhir" + (part.additionalOpening ? "\nTambahan saldo pembukaan: Rp" + pdfAmount(part.additionalOpening) : ""), pdfAmount(part.incoming), pdfAmount(part.outgoing), pdfAmount(part.closing)], "result"),
           ],
         });
       }
-      if (from.slice(0, 7) !== to.slice(0, 7)) model.tables.push({ title: "Total periode terpilih", columns: amountColumns, rows: [
+      if (from.slice(0, 7) !== to.slice(0, 7)) model.tables.push({ title: "Ringkasan buku kas periode", pageBreak: true, columns: amountColumns, rows: [
         amountRow("Saldo awal", book.opening), amountRow("Total pemasukan", book.incoming),
         amountRow("Total pengeluaran", book.outgoing), amountRow("Tambahan saldo pembukaan akun", book.additionalOpening),
         amountRow("Saldo akhir", book.closing, "result"),
@@ -137,11 +138,12 @@ export function buildReportDocument(data: State, options: PdfReportOptions): Rep
   if (kind === "profit") {
     const operational = EXPENSE_ACCOUNTS.filter(k => k !== "BIAYA_JASA" && k !== "BEBAN_LAIN");
     model.tables.push({ title: "", columns: amountColumns, rows: [
-      section("Pendapatan"), amountRow(REPORT_ACCOUNTS.PENDAPATAN, report.income),
-      section("Biaya jasa"), amountRow(REPORT_ACCOUNTS.BIAYA_JASA, report.directCosts),
+      section("Pendapatan"), amountRow(REPORT_ACCOUNTS.PENDAPATAN, report.income), amountRow("Jumlah pendapatan", report.income, "total"),
+      section("Biaya jasa"), amountRow(REPORT_ACCOUNTS.BIAYA_JASA, report.directCosts), amountRow("Jumlah biaya jasa", report.directCosts, "total"),
       amountRow("LABA KOTOR", report.grossProfit, "total"),
       section("Biaya operasional"), ...operational.map(k => amountRow(REPORT_ACCOUNTS[k], report.period[k])),
       amountRow("Jumlah biaya operasional", sum(operational.map(k => report.period[k])), "total"),
+      amountRow("LABA (RUGI) OPERASIONAL", report.grossProfit - sum(operational.map(k => report.period[k])), "total"),
       section("Pendapatan dan beban lain"), amountRow("Pendapatan lain", -report.period.PENDAPATAN_LAIN), amountRow("Beban lain", report.period.BEBAN_LAIN),
       ...(report.period.BELUM_DIPETAKAN ? [amountRow("Mutasi usaha belum dipetakan (sementara)", report.period.BELUM_DIPETAKAN)] : []),
       amountRow(calculationReady ? "LABA (RUGI) BERSIH" : "LABA (RUGI) SEMENTARA", report.netProfit, "result"),
@@ -185,7 +187,7 @@ export function buildReportDocument(data: State, options: PdfReportOptions): Rep
       const totals = half.map(month => sum(assets.map(a => assetPeriodExpense(data, a, month + "-01", monthEnd(month)))));
       model.tables.push({
         title: "Jadwal penyusutan " + year + " | " + monthLabel(half[0]).split(" ")[0] + " - " + monthLabel(half[5]),
-        pageBreak: half[0] === year + "-01",
+        pageBreak: true,
         columns: [{ label: "Aset", weight: 2 }, ...half.map(m => ({ label: monthLabel(m).split(" ")[0] + " (Rp)", weight: 1.15, numeric: true })), { label: "Total semester (Rp)", weight: 1.4, numeric: true }],
         rows: [...assets.map(a => { const values = half.map(m => assetPeriodExpense(data, a, m + "-01", monthEnd(m))); return row([text(a, "nama_aset"), ...values.map(pdfAmount), pdfAmount(sum(values))]); }),
           row(["TOTAL", ...totals.map(pdfAmount), pdfAmount(sum(totals))], "result")],
@@ -204,8 +206,10 @@ export function buildReportDocument(data: State, options: PdfReportOptions): Rep
     });
     if (role !== "VIEWER") model.tables.push({
       title: "Pembayaran kas pada periode terpilih",
+      pageBreak: tax.rows.length > 6 && tax.payments.length > 4,
       columns: [{ label: "Tanggal bayar", weight: 1.2 }, { label: "Periode pajak", weight: 1 }, { label: "Keterangan / perlakuan", weight: 2.5 }, { label: "Nominal (Rp)", weight: 1.3, numeric: true }],
-      rows: tax.payments.map(p => row([dateLabel(p.date), text(p, "periode_pajak"), p.description + "\n" + (p.perlakuan === "PELUNASAN_UTANG" ? "Pelunasan utang pajak" : "Beban pajak"), pdfAmount(p.amount)])),
+      rows: [...tax.payments.map(p => row([dateLabel(p.date), text(p, "periode_pajak"), p.description + "\n" + (p.perlakuan === "PELUNASAN_UTANG" ? "Pelunasan utang pajak" : "Beban pajak"), pdfAmount(p.amount)])),
+        ...(tax.payments.length ? [row(["TOTAL KAS DIBAYAR", "", "", pdfAmount(sum(tax.payments.map(p => p.amount)))], "result")] : [])],
     });
     model.notes.push("Perhitungan mengikuti dasar dan tarif yang ditetapkan pemilik. Tanggal bayar berbeda dari periode kewajiban. Pembayaran untuk satu tahun penuh tidak dibagi otomatis ke setiap bulan; total pembayaran bulanan hanya mencakup tautan ke bulan terkait.");
   }

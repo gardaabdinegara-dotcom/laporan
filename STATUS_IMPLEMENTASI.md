@@ -99,3 +99,82 @@ Verifikasi lokal tambahan:
 Pemeriksaan ini menggunakan data contoh dan fixture terisolasi. Tidak ada
 deployment, migrasi Sheets operasional, atau transaksi keuangan nyata. PDF
 unduhan langsung telah diuji; dialog Cetak browser tetap merupakan fitur terpisah.
+
+## Contoh setahun 2025 dan PDF yang dirapikan - 21 Oktober 2026
+
+Contoh Januari–Desember 2025 tersedia dari Laporan melalui **Muat contoh setahun
+2025**. Pilihan Tahunan 2025 diaktifkan otomatis. Contoh singkat dan contoh
+tahunan disimpan pada key browser berbeda; perpindahan dan reload telah diperiksa.
+Contoh singkat sebelumnya tetap mempunyai kas akhir Rp5.450.000.
+
+Dataset baru mempunyai 16 siswa fiktif, 60 tagihan, 64 jadwal pembayaran,
+178 baris kas, dan 9 aset. Semua tagihan terhubung/lunas pada akhir 2025.
+Pendapatan Rp134.500.000, biaya jasa Rp75.600.000, penyusutan Rp10.268.750,
+dan laba bersih Rp5.908.750. Kas awal Rp19.820.000, pengeluaran kas
+Rp123.702.500, serta kas akhir Rp30.617.500. Total aset/ekuitas Rp61.872.708.
+Saldo dan tarif merupakan simulasi. Akumulasi awal aset mengikuti bulan perolehan.
+Pajak 2024 Rp880.000 dilunasi dari utang awal; beban/pajak simulasi 2025
+Rp672.500 dibukukan sekali dan dilunasi per bulan.
+
+Penyempurnaan PDF: buku kas 12 halaman bulan dan satu ringkasan, subtotal laba
+rugi, register aset dan dua semester penyusutan pada halaman tersendiri, serta
+pembayaran pajak menurut tanggal kas. Pratinjau gabungan berisi **23 halaman**
+dengan sampul, daftar isi yang dapat diklik, ringkasan/grafik tahunan, dan enam
+hasil PDF yang diunduh melalui tombol aplikasi. Pada tahap pratinjau awal ini,
+sampul/ringkasan masih digabung terpisah. Pembaruan berikut mengotomasikannya.
+
+Verifikasi:
+
+- TypeScript, **79 pengujian otomatis**, dan build produksi lulus.
+- Tujuh pengujian dataset baru mencakup ketetapan data, saldo tiap bulan/rekening,
+  tagihan/cicilan, aset, pemisahan pajak, serta kesesuaian dokumen tahunan.
+- Enam PDF tahunan diunduh melalui browser. Seluruh 178 referensi kas ada pada
+  hasil, enam pencocokan antar laporan berselisih nol, dan saldo tiap rekening
+  tidak negatif sepanjang transaksi simulasi.
+- Semua 23 halaman dirender dan diperiksa; total, batas margin, nomor halaman
+  global, serta enam tautan daftar isi diperiksa secara struktur dan visual.
+- Delapan kombinasi light/dark dan 320/390/768/1280 px tidak meluber.
+  Pergantian contoh tidak mengubah workspace contoh lama; reload mempertahankan
+  dataset setahun dan pilihan awal Tahunan 2025.
+
+Bukti antarmuka ada pada preview-annual-demo-2025. Pratinjau PDF ada pada
+output/pdf/Simulasi-Laporan-Keuangan-Garda-2025.pdf. Tidak ada deployment,
+migrasi, atau penulisan ke spreadsheet operasional dalam pengerjaan ini.
+
+## Generate Semua Laporan - 21 Oktober 2026
+
+Tombol baru membuat satu buku laporan tahunan langsung dari browser. Sampul,
+daftar isi, serta ringkasan/grafik masing-masing mempunyai halaman tersendiri,
+diikuti enam laporan. Tautan daftar isi, sembilan bookmark, orientasi portrait/
+landscape, dan nomor halaman global dihitung dari isi aktual. Font dibagi dalam
+satu PDF sehingga tidak perlu menggabungkan enam berkas secara manual.
+
+Paket selalu mencakup seluruh kas/bank; filter rekening tetap berlaku pada
+laporan satuan. Tahun/rentang diambil saat klik sebelum pemuatan renderer.
+Hak akses VIEWER, Draf, Proyeksi, serta data contoh dipertahankan. Pajak belum
+lengkap tidak menjadi nol. Tambahan pembukaan akun terpisah dari penerimaan.
+
+Verifikasi lokal:
+
+- TypeScript, **86 pengujian otomatis**, dan build produksi lulus.
+- Tujuh pengujian tambahan mencakup snapshot, kalender, saldo pembukaan baru,
+  hak akses, Draf/Proyeksi, PDF bertautan dengan pagination dinamis, serta grafik
+  nol dan laporan dengan catatan panjang.
+- Unduhan tombol baru dengan contoh 2025 menghasilkan **24 halaman**, empat
+  halaman landscape, tujuh tautan daftar isi yang menuju bagian benar, sembilan
+  bookmark, nomor halaman global, dan seluruh **178 referensi baris kas**.
+- Paket tahun 2024 menghasilkan 27 halaman Draf dan daftar isi yang sesuai,
+  tanpa menyisipkan transaksi 2025. Fixture VIEWER berisi 11 halaman tanpa
+  rincian transaksi; fixture kosong/Draf berisi 26 halaman dengan pajak belum
+  lengkap. Semua berkas diperiksa struktur, teks, dan batas marginnya.
+- Periode bulanan/tahun kosong/rentang sebagian menonaktifkan tombol; rentang
+  khusus setahun mengaktifkannya. PDF satuan bank tetap dapat diunduh. Paket
+  yang diunduh saat filter bank aktif tetap mencakup semua akun.
+- Unduhan ponsel mode terang mempunyai isi identik dengan unduhan desktop mode
+  gelap. Delapan kombinasi light/dark pada 320/390/768/1280 px tidak meluber;
+  kedua tombol PDF memakai lebar baris penuh pada ponsel. Log browser bersih.
+- Seluruh halaman hasil akhir dirender dan diperiksa secara visual.
+
+Contoh hasil langsung: output/pdf/Simulasi-Semua-Laporan-Garda-2025.pdf.
+Bukti antarmuka dan ringkasan QA: preview-generate-semua-2026-10-21.
+Pembaruan ini belum dideploy dan tidak menulis data spreadsheet operasional.

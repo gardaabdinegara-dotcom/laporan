@@ -9,6 +9,7 @@ import {
 } from "react";
 import Icon from "./icon";
 import FinancialReports from "./financial-reports";
+import { ANNUAL_DEMO_ID, ANNUAL_DEMO_KEY, ANNUAL_DEMO_YEAR, DEMO_SCENARIO_KEY, annualDemoState } from "../lib/annual-demo";
 import { restorePendingCommand } from "../lib/pending-command";
 import {
   active,
@@ -187,9 +188,10 @@ export default function FinanceApp() {
     to = asOf.slice(0, 7) === month ? asOf : endOfMonth(month);
   const f = finance(data, from, to);
   const businessName = setting(data, "business_name", "Garda Abdi Negara");
+  const sampleYear = mode === "demo" && setting(data, "demo_scenario") === ANNUAL_DEMO_ID ? ANNUAL_DEMO_YEAR : "";
   const effectiveDate =
     mode === "demo"
-      ? "2026-10-13"
+      ? setting(data, "demo_today", "2026-10-13")
       : today(setting(data, "timezone", "Asia/Jakarta"));
   const toast = useCallback((msg: string) => {
     setMessage(msg);
@@ -236,11 +238,13 @@ export default function FinanceApp() {
   };
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(DEMO_KEY);
-      if (stored) {
-        const parsed = upgradeState(JSON.parse(stored) as State);
+      const annual = localStorage.getItem(DEMO_SCENARIO_KEY) === "annual";
+      const stored = localStorage.getItem(annual ? ANNUAL_DEMO_KEY : DEMO_KEY);
+      if (stored || annual) {
+        const parsed = stored ? upgradeState(JSON.parse(stored) as State) : annualDemoState();
         validateState(parsed);
         setData(parsed);
+        if (annual) { setMonth("2025-12"); setAsOf("2025-12-31"); }
       }
       const p = localStorage.getItem(PENDING_KEY);
       if (p) setPending(p);
@@ -261,8 +265,11 @@ export default function FinanceApp() {
       .catch(() => {});
   }, []);
   useEffect(() => {
-    if (hydrated && mode === "demo")
-      localStorage.setItem(DEMO_KEY, JSON.stringify(data));
+    if (hydrated && mode === "demo") {
+      const annual = setting(data, "demo_scenario") === ANNUAL_DEMO_ID;
+      localStorage.setItem(annual ? ANNUAL_DEMO_KEY : DEMO_KEY, JSON.stringify(data));
+      localStorage.setItem(DEMO_SCENARIO_KEY, annual ? "annual" : "brief");
+    }
   }, [data, mode, hydrated]);
   useEffect(() => {
     if (modal && dialog.current && !dialog.current.open)
@@ -304,27 +311,31 @@ export default function FinanceApp() {
     if (hydrated && new URLSearchParams(location.search).get("mode") === "real")
       void loadReal();
   }, [hydrated, loadReal]);
-  const useDemo = () => {
+  const selectDemo = (scenario: "brief" | "annual") => {
     try {
-      const saved = localStorage.getItem(DEMO_KEY);
-      const restored = saved ? upgradeState(JSON.parse(saved)) : demoState();
+      if (mode === "demo") localStorage.setItem(sampleYear ? ANNUAL_DEMO_KEY : DEMO_KEY, JSON.stringify(data));
+      const saved = localStorage.getItem(scenario === "annual" ? ANNUAL_DEMO_KEY : DEMO_KEY);
+      const restored = saved ? upgradeState(JSON.parse(saved)) : scenario === "annual" ? annualDemoState() : demoState();
       validateState(restored);
+      localStorage.setItem(DEMO_SCENARIO_KEY, scenario);
       setData(restored);
     } catch {
-      setData(demoState());
+      setError("Data contoh belum dapat dibuka. Periksa penyimpanan browser, atau pulihkan contoh melalui Pengaturan.");
+      return;
     }
     setMode("demo");
     setDataAsOf(new Date().toISOString());
     setActor(DEMO_ACTOR);
     setInitialized(true);
     setSchemaReady(true);
-    setMonth("2026-10");
-    setAsOf("2026-10-13");
+    setMonth(scenario === "annual" ? "2025-12" : "2026-10");
+    setAsOf(scenario === "annual" ? "2025-12-31" : "2026-10-13");
     setModal(null);
     setError("");
     localStorage.setItem("garda.keuangan.mode", "demo");
     history.replaceState(null, "", "/" + location.hash);
   };
+  const useDemo = () => selectDemo(localStorage.getItem(DEMO_SCENARIO_KEY) === "annual" ? "annual" : "brief");
   async function execute(action: string, payload: Record<string, unknown>, retry?: Command) {
     if (saving.current || (!retry && !canWrite)) return false;
     if (retry && (actor.role === "VIEWER" || !cap?.writeEnabled || !cap.coordinator || retry.operationId !== pending)) return false;
@@ -1488,7 +1499,7 @@ export default function FinanceApp() {
     );
   }
   function Reports() {
-    return <FinancialReports data={data} actor={actor} month={month} canWrite={canWrite} busy={busy} simulation={mode === "demo"} dataAsOf={dataAsOf} execute={execute}>{LegacyReports()}</FinancialReports>;
+    return <FinancialReports data={data} actor={actor} month={month} canWrite={canWrite} busy={busy} simulation={mode === "demo"} dataAsOf={dataAsOf} execute={execute} sampleYear={sampleYear} onDemoScenario={annual => selectDemo(annual ? "annual" : "brief")}>{LegacyReports()}</FinancialReports>;
   }
   function LegacyReports() {
     const reconciliation = reconciliationFor(data, month);
@@ -2937,7 +2948,7 @@ export default function FinanceApp() {
           <button
             className="btn primary"
             onClick={() => {
-              setData(demoState());
+              setData(sampleYear ? annualDemoState() : demoState());
               setModal(null);
               toast("Data contoh dipulihkan.");
             }}

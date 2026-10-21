@@ -222,7 +222,7 @@ export function taxReport(s: State, from: string, to: string) {
     const tx = s.Transaksi.find(r => r.transaksi_id === p.transaksi_id)!;
     const amount = n(tx, "nominal") - sum(s.Transaksi.filter(r => r.jenis === "PEMBALIK" && r.transaksi_rujukan_id === tx.transaksi_id && t(r, "tanggal_transaksi") <= to).map(r => n(r, "nominal")));
     return { ...p, date: t(tx, "tanggal_transaksi"), amount, description: t(tx, "deskripsi") } as Row & { date: string; amount: number; description: string };
-  }).filter(p => p.date >= from && p.date <= to);
+  }).filter(p => p.date >= from && p.date <= to).sort((a, b) => a.date.localeCompare(b.date));
   return { rows, total, turnover: sum(rows.map(r => r.turnover)), payments, warnings, basis, ready: warnings.length === 0 };
 }
 export function reportCSV(rows: (string | number | null)[][]) {

@@ -1,0 +1,69 @@
+{
+  "download": "E:\\Downloads\\garda-semua-laporan-2025 (1).pdf",
+  "bankSingle": "E:\\Downloads\\garda-buku-kas-2025-01-01_2025-12-31-rekening-bank.pdf",
+  "priorYear": "E:\\Downloads\\garda-semua-laporan-2024.pdf",
+  "mobileDownload": "E:\\Downloads\\garda-semua-laporan-2025 (2).pdf",
+  "monthlyDisabled": true,
+  "emptyYearDisabled": true,
+  "customFullYearEnabled": true,
+  "customPartialYearDisabled": true,
+  "responsive": [
+    {
+      "buttonEnabled": true,
+      "mode": "light",
+      "scrollWidth": 305,
+      "theme": "terrace",
+      "width": 320
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "light",
+      "scrollWidth": 375,
+      "theme": "terrace",
+      "width": 390
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "light",
+      "scrollWidth": 753,
+      "theme": "terrace",
+      "width": 768
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "light",
+      "scrollWidth": 1265,
+      "theme": "terrace",
+      "width": 1280
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "dark",
+      "scrollWidth": 305,
+      "theme": "terrace",
+      "width": 320
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "dark",
+      "scrollWidth": 375,
+      "theme": "terrace",
+      "width": 390
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "dark",
+      "scrollWidth": 753,
+      "theme": "terrace",
+      "width": 768
+    },
+    {
+      "buttonEnabled": true,
+      "mode": "dark",
+      "scrollWidth": 1265,
+      "theme": "terrace",
+      "width": 1280
+    }
+  ],
+  "logs": []
+}
