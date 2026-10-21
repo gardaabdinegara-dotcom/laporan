@@ -1,0 +1,868 @@
+{
+  "date": "2026-10-21",
+  "source": "Data contoh tersimpan di browser",
+  "reports": [
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Buku kas",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Buku kas",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Laba rugi",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Laba rugi",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Neraca",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Neraca",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Aset & penyusutan",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Aset & penyusutan",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Omzet & pajak",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Omzet & pajak",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Pemeriksaan",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Pemeriksaan",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Ringkasan kas",
+      "background": "rgb(247, 246, 240)",
+      "page": 305,
+      "table": "Ringkasan kas",
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Buku kas",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Buku kas",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Laba rugi",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Laba rugi",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Neraca",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Neraca",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Aset & penyusutan",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Aset & penyusutan",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Omzet & pajak",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Omzet & pajak",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Pemeriksaan",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Pemeriksaan",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Ringkasan kas",
+      "background": "rgb(247, 246, 240)",
+      "page": 375,
+      "table": "Ringkasan kas",
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Buku kas",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Laba rugi",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Neraca",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Aset & penyusutan",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Omzet & pajak",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Pemeriksaan",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "label": "Ringkasan kas",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Buku kas",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Laba rugi",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Neraca",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Aset & penyusutan",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Omzet & pajak",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Pemeriksaan",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "label": "Ringkasan kas",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Buku kas",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Laba rugi",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Neraca",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Aset & penyusutan",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Omzet & pajak",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Pemeriksaan",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Ringkasan kas",
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Buku kas",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Laba rugi",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Neraca",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Aset & penyusutan",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Omzet & pajak",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Pemeriksaan",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Ringkasan kas",
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Buku kas",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Laba rugi",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Neraca",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Aset & penyusutan",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Omzet & pajak",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Pemeriksaan",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "label": "Ringkasan kas",
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Buku kas",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Laba rugi",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Neraca",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Aset & penyusutan",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Omzet & pajak",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Pemeriksaan",
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "label": "Ringkasan kas",
+      "page": 1265,
+      "viewport": 1280
+    }
+  ],
+  "forms": [
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Dasar laporan",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Kategori",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Saldo awal",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Aset",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Jurnal nonkas",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Tarif pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "label": "Pembayaran pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Dasar laporan",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Kategori",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Saldo awal",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Aset",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Jurnal nonkas",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Tarif pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "label": "Pembayaran pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Dasar laporan",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Kategori",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Saldo awal",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Aset",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Jurnal nonkas",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Tarif pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "label": "Pembayaran pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Dasar laporan",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Kategori",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Saldo awal",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Aset",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Jurnal nonkas",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Tarif pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "label": "Pembayaran pajak",
+      "fonts": [
+        "16px",
+        "16px",
+        "16px",
+        "16px"
+      ],
+      "page": 375,
+      "viewport": 390
+    }
+  ],
+  "exportedCsv": "E:\\Downloads\\garda-cash-2026-10-01-2026-10-31.csv",
+  "actionsVerified": [
+    "penolakan periode tertutup",
+    "dasar laporan",
+    "pemetaan kategori",
+    "saldo awal seimbang",
+    "aset awal dan penyusutan",
+    "tarif pajak",
+    "jurnal seimbang",
+    "pembalik jurnal",
+    "filter akun",
+    "pilihan tahun",
+    "rentang tanggal dan penolakan ekspor rentang terbalik",
+    "preferensi mode tersimpan setelah reload"
+  ],
+  "productionWrites": false
+}

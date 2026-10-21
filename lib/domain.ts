@@ -1,3 +1,4 @@
+import { applyReportCommand, validateReportState } from "./report-commands.ts";
 export type Cell = string | number | boolean;
 export type Row = Record<string, Cell>;
 export const TABLES = [
@@ -13,6 +14,12 @@ export const TABLES = [
   "Kategori",
   "Transaksi",
   "Operasi",
+  "Pemetaan_Laporan",
+  "Aset",
+  "Saldo_Neraca",
+  "Jurnal_Laporan",
+  "Tarif_Pajak",
+  "Pembayaran_Pajak",
 ] as const;
 export type Table = (typeof TABLES)[number];
 export type State = Record<Table, Row[]>;
@@ -37,9 +44,21 @@ export const KEYS: Record<Table, string> = {
   Kategori: "kategori_id",
   Transaksi: "transaksi_id",
   Operasi: "operation_id",
+  Pemetaan_Laporan: "pemetaan_id",
+  Aset: "aset_id",
+  Saldo_Neraca: "saldo_id",
+  Jurnal_Laporan: "baris_id",
+  Tarif_Pajak: "tarif_id",
+  Pembayaran_Pajak: "pembayaran_id",
 };
 const audit = ["created_at", "created_by", "updated_at", "updated_by"];
 export const COLUMNS: Record<Table, string[]> = {
+  Pemetaan_Laporan: ["pemetaan_id", "kategori_id", "kelompok", "berlaku_mulai", "operation_id", ...audit],
+  Aset: ["aset_id", "nama_aset", "sumber", "transaksi_id", "tanggal_perolehan", "tanggal_mulai", "tanggal_saldo_awal", "harga_perolehan", "umur_bulan", "nilai_residu", "akumulasi_awal", "catatan", "operation_id", ...audit],
+  Saldo_Neraca: ["saldo_id", "versi", "tanggal", "akun_laporan", "debit", "kredit", "sumber", "operation_id", ...audit],
+  Jurnal_Laporan: ["baris_id", "jurnal_id", "tanggal", "akun_laporan", "debit", "kredit", "deskripsi", "rujukan", "jurnal_rujukan_id", "operation_id", ...audit],
+  Tarif_Pajak: ["tarif_id", "berlaku_mulai", "tarif_basis_poin", "catatan", "operation_id", ...audit],
+  Pembayaran_Pajak: ["pembayaran_id", "transaksi_id", "periode_pajak", "perlakuan", "catatan", "operation_id", ...audit],
   Pengaturan: ["key", "value", "updated_at", "updated_by"],
   Pengguna: [
     "user_id",
@@ -182,13 +201,26 @@ export const active = (r: Row) =>
   r.aktif === true || r.aktif === "TRUE" || r.aktif === "true";
 export const emptyState = (): State =>
   Object.fromEntries(TABLES.map((t) => [t, []])) as unknown as State;
+export function upgradeState(input: State): State {
+  // Version 1 backups/demo data keep all original IDs and gain empty report tables.
+  const state = structuredClone(input);
+  for (const table of ["Pemetaan_Laporan", "Aset", "Saldo_Neraca", "Jurnal_Laporan", "Tarif_Pajak", "Pembayaran_Pajak"] as Table[])
+    if (!(table in state)) state[table] = [];
+  if (Array.isArray(state.Pengaturan)) {
+    const version = state.Pengaturan.find(r => r.key === "schema_version");
+    if (version && !["1", "2"].includes(String(version.value))) throw new DomainError("Versi struktur data belum didukung oleh aplikasi ini.", "SCHEMA_VERSION", 409);
+    if (version) version.value = "2";
+    else state.Pengaturan.push({ key: "schema_version", value: "2" });
+  }
+  return state;
+}
 export const setting = (s: State, key: string, fallback = "") =>
   text(
     s.Pengaturan.find((r) => r.key === key),
     "value",
   ) || fallback;
 export const money = (n: number) =>
-  "Rp" + new Intl.NumberFormat("id-ID").format(n);
+  "Rp" + new Intl.NumberFormat("id-ID").format(n === 0 ? 0 : n);
 export const dateLabel = (date: string) =>
   new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
@@ -420,8 +452,35 @@ export function finance(s: State, from: string, to: string, accountId = "") {
     bills,
   };
 }
+export type Reconciliation = { month: string; checkedAt: string; checkedBy: string; note: string; accounts: { akun_id: string; nama_akun: string; expected: number; actual: number; difference: number }[] };
+export function reconciliationFor(s: State, month: string): Reconciliation | null {
+  try {
+    const value = JSON.parse(setting(s, `reconciliation:${month}`, "null"));
+    if (!value || value.month !== month || typeof value.checkedAt !== "string" || typeof value.checkedBy !== "string" || typeof value.note !== "string" || !Array.isArray(value.accounts) || !value.accounts.length) return null;
+    if (!value.accounts.every((a: Reconciliation["accounts"][number]) => typeof a.akun_id === "string" && typeof a.nama_akun === "string" && [a.expected, a.actual, a.difference].every(Number.isSafeInteger) && a.difference === a.actual - a.expected)) return null;
+    return value as Reconciliation;
+  } catch { return null; }
+}
+export function reconcileAccounts(s: State, month: string, balances: unknown) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new DomainError("Bulan tidak valid.");
+  if (!Array.isArray(balances)) throw new DomainError("Isi saldo nyata setiap akun kas dan bank.");
+  const accounts = finance(s, month + "-01", endOfMonth(month)).accounts.filter(a => a.available);
+  if (!accounts.length) throw new DomainError("Belum ada akun pada akhir bulan yang dipilih.");
+  const ids = balances.map(b => String(b?.akun_id || ""));
+  if (balances.length !== accounts.length || new Set(ids).size !== ids.length || ids.some(id => !accounts.some(a => a.akun_id === id)))
+    throw new DomainError("Saldo nyata harus mencakup setiap akun tepat satu kali.");
+  return accounts.map(account => {
+    const value = balances.find(b => b.akun_id === account.akun_id)?.nominal;
+    if (value === "" || value === null || value === undefined || typeof value === "boolean" || !Number.isSafeInteger(Number(value)) || Math.abs(Number(value)) > 1000000000000)
+      throw new DomainError("Saldo nyata harus berupa rupiah utuh untuk setiap akun.");
+    const actual = Number(value), expected = account.balance!;
+    return { akun_id: text(account, "akun_id"), nama_akun: text(account, "nama_akun"), expected, actual, difference: actual - expected };
+  });
+}
+
 export function validateState(s: State) {
   for (const table of TABLES) {
+    if (!Array.isArray(s[table])) throw new DomainError("Tabel " + table + " tidak valid.", "DATA_INTEGRITY", 409);
     const keys = s[table].map((r) => text(r, KEYS[table]));
     if (keys.some((k) => !k) || new Set(keys).size !== keys.length)
       throw new DomainError(
@@ -430,6 +489,7 @@ export function validateState(s: State) {
         409,
       );
   }
+  if (!["1", "2"].includes(setting(s, "schema_version", "1"))) throw new DomainError("Versi struktur data belum didukung oleh aplikasi ini.", "SCHEMA_VERSION", 409);
   try {
     const closed = JSON.parse(setting(s, "closed_periods", "[]"));
     if (
@@ -450,6 +510,8 @@ export function validateState(s: State) {
     amount(a.saldo_awal, true);
     validDate(a.tanggal_saldo_awal);
   }
+  for (const r of s.Pengaturan.filter(r => text(r, "key").startsWith("reconciliation:")))
+    if (!reconciliationFor(s, text(r, "key").slice(15))) throw new DomainError("Catatan pencocokan saldo tidak valid.", "DATA_INTEGRITY", 409);
   for (const p of s.Pendaftaran) {
     found(s, "Siswa", p.siswa_id);
     found(s, "Program", p.program_id);
@@ -605,6 +667,21 @@ export function validateState(s: State) {
         "DATA_INTEGRITY",
         409,
       );
+  validateReportState(s);
+  // Leave headroom for differences between two cumulative report snapshots.
+  const moneyFields: Partial<Record<Table, string[]>> = {
+    Akun: ["saldo_awal"], Transaksi: ["nominal"], Tagihan: ["nominal_dasar", "diskon_awal"],
+    Jadwal_Tagihan: ["nominal"], Penyesuaian_Tagihan: ["nominal"],
+    Aset: ["harga_perolehan", "nilai_residu", "akumulasi_awal"],
+    Saldo_Neraca: ["debit", "kredit"], Jurnal_Laporan: ["debit", "kredit"],
+  };
+  let exposure = 0n;
+  for (const [table, fields] of Object.entries(moneyFields)) for (const row of s[table as Table]) for (const field of fields) {
+    const value = num(row, field);
+    if (!Number.isSafeInteger(value)) throw new DomainError("Nominal tidak dapat dihitung secara tepat.", "DATA_INTEGRITY", 409);
+    exposure += BigInt(Math.abs(value));
+  }
+  if (exposure > BigInt(Number.MAX_SAFE_INTEGER) / 2n) throw new DomainError("Total nominal melampaui batas perhitungan rupiah yang aman. Arsipkan atau migrasikan data sebelum melanjutkan.", "CAPACITY", 409);
 }
 export function applyCommand(
   input: State,
@@ -1159,6 +1236,11 @@ export function applyCommand(
           throw new DomainError("Jenis akun tidak valid.");
         const balance = amount(d.saldo_awal, true),
           date = validDate(d.tanggal_saldo_awal);
+        if (!existing || balance !== num(existing, "saldo_awal") || date !== text(existing, "tanggal_saldo_awal")) {
+          const affected = [date, existing ? text(existing, "tanggal_saldo_awal") : date].sort()[0];
+          if ((JSON.parse(setting(s, "closed_periods", "[]")) as string[]).some(m => m >= affected.slice(0, 7)))
+            throw new DomainError("Saldo awal akun memengaruhi periode yang ditutup. Buka kembali periode terkait terlebih dahulu.", "PERIOD_CLOSED", 409);
+        }
         if (
           existing &&
           s.Transaksi.some((t) => t.akun_id === existing.akun_id) &&
@@ -1258,6 +1340,7 @@ export function applyCommand(
         throw new DomainError("Minimal satu OWNER harus tetap aktif.");
       break;
     }
+    case "period.reconcile":
     case "period.close":
     case "period.open": {
       onlyOwner();
@@ -1266,6 +1349,15 @@ export function applyCommand(
         throw new DomainError("Bulan tidak valid.");
       required(d.alasan, "Catatan rekonsiliasi / alasan", 500);
       const closed = JSON.parse(setting(s, "closed_periods", "[]")) as string[];
+      if (command.action !== "period.open") {
+        assertOpen(s, endOfMonth(month));
+        const accounts = reconcileAccounts(s, month, d.saldo_nyata);
+        if (command.action === "period.close" && accounts.some(a => a.difference !== 0))
+          throw new DomainError("Saldo nyata belum cocok. Simpan hasil pencocokan dan periksa selisih sebelum menutup bulan.");
+        setSetting(s, `reconciliation:${month}`, JSON.stringify({ month, accounts, checkedAt: now, checkedBy: actor.id, note: String(d.alasan) }), actor, now);
+        result = { matched: accounts.every(a => a.difference === 0), accounts: accounts.length };
+        if (command.action === "period.reconcile") break;
+      }
       setSetting(
         s,
         "closed_periods",
@@ -1280,7 +1372,8 @@ export function applyCommand(
       break;
     }
     default:
-      throw new DomainError("Tindakan tidak dikenali.");
+      if (command.action.startsWith("report.")) result = applyReportCommand(s, command, actor, now, id);
+      else throw new DomainError("Tindakan tidak dikenali.");
   }
   validateState(s);
   const changed = TABLES.filter(
@@ -1334,7 +1427,7 @@ function validateURL(value: unknown) {
 export function initialState(ownerEmail = OWNER_EMAIL, date = today()): State {
   const s = emptyState();
   s.Pengaturan = [
-    { key: "schema_version", value: "1" },
+    { key: "schema_version", value: "2" },
     { key: "business_name", value: "Garda Abdi Negara" },
     { key: "timezone", value: "Asia/Jakarta" },
     { key: "closed_periods", value: "[]" },
@@ -1590,5 +1683,19 @@ export function demoState(): State {
     400000,
     "Transfer dari kas tunai",
   );
+  s.Pengaturan.push(
+    { key: "reporting_start", value: "2026-10-01" },
+    { key: "reporting_basis", value: "KAS_DISESUAIKAN" },
+    { key: "tax_basis", value: "KAS_BRUTO" },
+    { key: "report_location", value: "Kab. Gowa" },
+    { key: "report_signer", value: "Pengelola (contoh)" },
+    { key: "report_position", value: "Direktur" },
+  );
+  s.Pemetaan_Laporan = [
+    ["honor", "BIAYA_JASA"], ["operasional", "BIAYA_LAIN"], ["sewa", "SEWA"], ["lain", "PENDAPATAN_LAIN"],
+  ].map(([category, group], i) => ({ pemetaan_id: "demo-map-" + i, kategori_id: category, kelompok: group, berlaku_mulai: "2026-10-01", operation_id: "demo-reporting" }));
+  s.Aset.push({ aset_id: "demo-asset", nama_aset: "Peralatan belajar (contoh)", sumber: "SALDO_AWAL", transaksi_id: "", tanggal_perolehan: "2026-09-20", tanggal_mulai: "2026-10-01", tanggal_saldo_awal: "2026-10-01", harga_perolehan: 1200000, umur_bulan: 12, nilai_residu: 0, akumulasi_awal: 0, catatan: "Aset simulasi, tidak diimpor ke data nyata.", operation_id: "demo-reporting" });
+  s.Saldo_Neraca = [["KAS_BANK", 3000000, 0], ["ASET_TETAP", 1200000, 0], ["AKUM_PENYUSUTAN", 0, 0], ["MODAL", 0, 4200000]].map(([account, debit, credit], i) => ({ saldo_id: "demo-opening-" + i, versi: 1, tanggal: "2026-10-01", akun_laporan: account, debit, kredit: credit, sumber: "Saldo awal simulasi", operation_id: "demo-reporting" }));
+  s.Tarif_Pajak.push({ tarif_id: "demo-tax", berlaku_mulai: "2026-10-01", tarif_basis_poin: 50, catatan: "Tarif simulasi untuk mencoba laporan; bukan penetapan tarif usaha.", operation_id: "demo-reporting" });
   return s;
 }

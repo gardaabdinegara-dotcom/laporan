@@ -5,6 +5,7 @@ import {
   finance,
   TABLES,
   active,
+  upgradeState,
   type State,
 } from "../lib/domain.ts";
 import {
@@ -31,6 +32,13 @@ try {
         throw new Error(
           "Nonaktifkan penulisan aplikasi dan hentikan instance sebelum setup pemeliharaan.",
         );
+      const loaded = await readState();
+      if (loaded.initialized) {
+        const backupIndex = args.indexOf("--backup");
+        const backupPath = backupIndex >= 0 ? args[backupIndex + 1] : "";
+        if (!backupPath) throw new Error("Pembaruan sumber yang sudah ada memerlukan --backup <path-file-privat-baru>. Cadangan dibuat sebelum migrasi.");
+        writeFileSync(backupPath, JSON.stringify({ schema: 2, exportedAt: new Date().toISOString(), data: loaded.state }, null, 2), { flag: "wx" });
+      }
       const result = await setupSheets();
       console.log(
         JSON.stringify({
@@ -62,7 +70,7 @@ try {
     writeFileSync(
       file,
       JSON.stringify(
-        { schema: 1, exportedAt: new Date().toISOString(), data: result.state },
+        { schema: 2, exportedAt: new Date().toISOString(), data: result.state },
         null,
         2,
       ),
@@ -73,11 +81,11 @@ try {
     const file = args[0];
     if (!file) throw new Error("Berikan path backup.");
     const content = JSON.parse(readFileSync(file, "utf8"));
-    if (content.schema !== 1 || content.simulation)
+    if (![1, 2].includes(content.schema) || content.simulation)
       throw new Error(
-        "Gunakan backup data nyata versi 1; data contoh tidak diimpor ke produksi.",
+        "Gunakan backup data nyata versi 1 atau 2; data contoh tidak diimpor ke produksi.",
       );
-    const state = content.data as State;
+    const state = upgradeState(content.data as State);
     validateState(state);
     if (!state.Pengguna.some((u) => u.role === "OWNER" && active(u)))
       throw new Error("OWNER aktif tidak ditemukan.");

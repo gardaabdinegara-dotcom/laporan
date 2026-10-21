@@ -8,6 +8,8 @@ import {
   type FormEvent,
 } from "react";
 import Icon from "./icon";
+import FinancialReports from "./financial-reports";
+import { restorePendingCommand } from "../lib/pending-command";
 import {
   active,
   applyCommand,
@@ -23,8 +25,10 @@ import {
   text,
   today,
   validateState,
+  upgradeState,
   dateLabel,
   dueDate,
+  reconciliationFor,
   type Actor,
   type Command,
   type Row,
@@ -55,10 +59,10 @@ type Modal = {
   enrollment?: string;
 };
 const NAV: [View, string, string][] = [
-  ["dashboard", "grid", "Dashboard"],
+  ["dashboard", "grid", "Ringkasan"],
+  ["tagihan", "receipt", "Tagihan"],
   ["transaksi", "arrows", "Transaksi"],
   ["siswa", "users", "Siswa"],
-  ["tagihan", "receipt", "Tagihan"],
   ["laporan", "chart", "Laporan"],
   ["pengaturan", "settings", "Pengaturan"],
 ];
@@ -70,6 +74,7 @@ const DEMO_ACTOR: Actor = {
 };
 const DEMO_KEY = "garda.keuangan.komando.demo.v1";
 const PENDING_KEY = "garda.keuangan.pending.v1";
+const PENDING_COMMAND_KEY = "garda.keuangan.pending-command.v1";
 const kindNames: Record<string, string> = {
   PEMBAYARAN_SISWA: "Pembayaran siswa",
   BIAYA: "Biaya usaha",
@@ -152,15 +157,21 @@ export default function FinanceApp() {
     [enrollmentId, setEnrollmentId] = useState("");
   const [invoiceMonth, setInvoiceMonth] = useState("2026-10");
   const [monthlyIds, setMonthlyIds] = useState<string[]>([]);
+  const [reconcileMonth, setReconcileMonth] = useState("2026-10"),
+    [periodAction, setPeriodAction] = useState("reconcile"),
+    [actualBalances, setActualBalances] = useState<Record<string, string>>({}),
+    [retryable, setRetryable] = useState(false);
   const [query, setQuery] = useState(""),
     [accountFilter, setAccountFilter] = useState(""),
     [kindFilter, setKindFilter] = useState("");
+  const [invoiceFilter, setInvoiceFilter] = useState("all");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
   const [initialized, setInitialized] = useState(true),
     [hydrated, setHydrated] = useState(false),
     [dataAsOf, setDataAsOf] = useState("");
+  const [schemaReady, setSchemaReady] = useState(true);
   const [cap, setCap] = useState<Capabilities | null>(null),
     [pending, setPending] = useState("");
   const dialog = useRef<HTMLDialogElement>(null),
@@ -170,7 +181,7 @@ export default function FinanceApp() {
     canWrite =
       actor.role !== "VIEWER" &&
       (mode === "demo" ||
-        Boolean(cap?.writeEnabled && cap?.coordinator && initialized)) &&
+        Boolean(cap?.writeEnabled && cap?.coordinator && initialized && schemaReady)) &&
       !(mode === "real" && pending);
   const from = month + "-01",
     to = asOf.slice(0, 7) === month ? asOf : endOfMonth(month);
@@ -190,6 +201,7 @@ export default function FinanceApp() {
     setQuery("");
     setAccountFilter("");
     setKindFilter("");
+    setInvoiceFilter("all");
     setModal(null);
     setError("");
     history.replaceState(null, "", "#" + next);
@@ -199,6 +211,11 @@ export default function FinanceApp() {
     setEntryKind(kind);
     setStageCount(1);
     setInvoiceMonth(month);
+    if (next.kind === "period") {
+      setReconcileMonth(month);
+      setPeriodAction(JSON.parse(setting(data, "closed_periods", "[]")).includes(month) ? "open" : "reconcile");
+      setActualBalances({});
+    }
     if (next.kind === "monthly")
       setMonthlyIds(
         monthlyCandidates(month)
@@ -221,7 +238,7 @@ export default function FinanceApp() {
     try {
       const stored = localStorage.getItem(DEMO_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as State;
+        const parsed = upgradeState(JSON.parse(stored) as State);
         validateState(parsed);
         setData(parsed);
       }
@@ -237,6 +254,7 @@ export default function FinanceApp() {
         "Login Google belum berhasil atau akun tidak diizinkan. Coba kembali setelah memeriksa konfigurasi.",
       );
     setHydrated(true);
+    setDataAsOf(new Date().toISOString());
     void fetch("/api/health")
       .then((r) => r.json())
       .then((j) => setCap(j.capabilities))
@@ -267,6 +285,7 @@ export default function FinanceApp() {
       setData(body.state);
       setActor(body.actor);
       setInitialized(body.initialized);
+      setSchemaReady(body.schemaReady !== false);
       setCap(body.capabilities);
       setDataAsOf(body.dataAsOf);
       setMode("real");
@@ -288,13 +307,17 @@ export default function FinanceApp() {
   const useDemo = () => {
     try {
       const saved = localStorage.getItem(DEMO_KEY);
-      setData(saved ? JSON.parse(saved) : demoState());
+      const restored = saved ? upgradeState(JSON.parse(saved)) : demoState();
+      validateState(restored);
+      setData(restored);
     } catch {
       setData(demoState());
     }
     setMode("demo");
+    setDataAsOf(new Date().toISOString());
     setActor(DEMO_ACTOR);
     setInitialized(true);
+    setSchemaReady(true);
     setMonth("2026-10");
     setAsOf("2026-10-13");
     setModal(null);
@@ -302,12 +325,13 @@ export default function FinanceApp() {
     localStorage.setItem("garda.keuangan.mode", "demo");
     history.replaceState(null, "", "/" + location.hash);
   };
-  async function execute(action: string, payload: Record<string, unknown>) {
-    if (saving.current || !canWrite) return false;
+  async function execute(action: string, payload: Record<string, unknown>, retry?: Command) {
+    if (saving.current || (!retry && !canWrite)) return false;
+    if (retry && (actor.role === "VIEWER" || !cap?.writeEnabled || !cap.coordinator || retry.operationId !== pending)) return false;
     saving.current = true;
     setBusy(true);
     setError("");
-    const command: Command = {
+    const command: Command = retry || {
       operationId: crypto.randomUUID(),
       action,
       data: payload,
@@ -316,11 +340,20 @@ export default function FinanceApp() {
       if (mode === "demo") {
         const next = applyCommand(data, command, actor);
         setData(next.state);
+        setDataAsOf(new Date().toISOString());
         toast(
           `Simulasi tersimpan${next.result.count !== undefined ? ": " + next.result.count + " tagihan baru" : ""}.`,
         );
       } else {
-        localStorage.setItem(PENDING_KEY, command.operationId);
+        if (!retry) { try {
+          sessionStorage.setItem(PENDING_COMMAND_KEY, JSON.stringify({ command, actorId: actor.id }));
+          localStorage.setItem(PENDING_KEY, command.operationId);
+        } catch {
+          localStorage.removeItem(PENDING_KEY);
+          sessionStorage.removeItem(PENDING_COMMAND_KEY);
+          throw new Error("Browser belum dapat menyimpan identitas permintaan. Aktifkan penyimpanan browser sebelum mencatat transaksi.");
+        } }
+        setRetryable(false);
         const response = await fetch("/api/mutate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -329,14 +362,20 @@ export default function FinanceApp() {
         const body = await response.json();
         if (response.status === 202) {
           setPending(command.operationId);
+          setModal(null);
           setError(body.error);
           return false;
         }
         if (!response.ok) {
-          localStorage.removeItem(PENDING_KEY);
+          if (!retry || body.rejected) {
+            localStorage.removeItem(PENDING_KEY);
+            sessionStorage.removeItem(PENDING_COMMAND_KEY);
+            setPending("");
+          }
           throw new Error(body.error || "Transaksi ditolak.");
         }
         localStorage.removeItem(PENDING_KEY);
+        sessionStorage.removeItem(PENDING_COMMAND_KEY);
         setPending("");
         setModal(null);
         toast("Data nyata tersimpan di spreadsheet.");
@@ -350,7 +389,7 @@ export default function FinanceApp() {
       return true;
     } catch (e) {
       if (mode === "real" && localStorage.getItem(PENDING_KEY))
-        setPending(command.operationId);
+        { setPending(command.operationId); setModal(null); }
       setError(e instanceof Error ? e.message : "Penyimpanan gagal.");
       return false;
     } finally {
@@ -365,6 +404,8 @@ export default function FinanceApp() {
     setData(body.state);
     setActor(body.actor);
     setInitialized(body.initialized);
+    setSchemaReady(body.schemaReady !== false);
+    setCap(body.capabilities);
     setDataAsOf(body.dataAsOf);
   }
   async function checkPending() {
@@ -375,18 +416,26 @@ export default function FinanceApp() {
       );
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
-      if (result.status === "COMMITTED") {
+      if (result.status === "COMMITTED" || result.status === "REJECTED") {
         localStorage.removeItem(PENDING_KEY);
+        sessionStorage.removeItem(PENDING_COMMAND_KEY);
         setPending("");
+        setRetryable(false);
         await refreshReal();
-        setError("");
-        toast("Operasi sudah tersimpan. Data diperbarui.");
-      } else
+        setError(result.status === "REJECTED" ? result.error || "Permintaan ditolak dan tidak disimpan." : "");
+        toast(result.status === "REJECTED" ? "Permintaan ditolak; Anda dapat memperbaiki isian lalu mencatat kembali." : "Operasi sudah tersimpan. Data diperbarui.");
+      } else {
+        const saved = sessionStorage.getItem(PENDING_COMMAND_KEY);
+        const available = actor.role !== "VIEWER" && Boolean(cap?.writeEnabled && cap.coordinator && restorePendingCommand(saved, actor.id, pending));
+        setRetryable(result.status === "RETRYABLE" && available);
         setError(
           result.status === "VERIFYING"
             ? "Operasi masih menunggu verifikasi. Penulisan berikutnya tetap ditahan."
-            : "Operasi belum ditemukan. Periksa riwayat dan panduan pemulihan sebelum membuat transaksi pengganti.",
+            : result.status === "RETRYABLE" && available
+              ? "Permintaan belum tercatat. Anda dapat mengirim ulang permintaan yang sama; aplikasi menjaga ID transaksi agar tidak ganda."
+              : "Permintaan belum terkonfirmasi. Tunggu penyimpanan lain selesai atau periksa panduan pemulihan.",
         );
+      }
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Status belum dapat diperiksa.",
@@ -394,6 +443,14 @@ export default function FinanceApp() {
     } finally {
       setBusy(false);
     }
+  }
+  async function retryPending() {
+    try {
+      const command = restorePendingCommand(sessionStorage.getItem(PENDING_COMMAND_KEY), actor.id, pending);
+      if (!retryable || !command)
+        throw new Error("Permintaan asli tidak tersedia pada tab ini. Gunakan Periksa status.");
+      await execute(command.action, command.data, command);
+    } catch (e) { setError(e instanceof Error ? e.message : "Permintaan tidak dapat dipulihkan."); }
   }
   function monthlyCandidates(period: string) {
     return data.Pendaftaran.filter(
@@ -516,7 +573,7 @@ export default function FinanceApp() {
       download(
         JSON.stringify(
           {
-            schema: 1,
+            schema: 2,
             simulation: true,
             exportedAt: new Date().toISOString(),
             data,
@@ -541,17 +598,31 @@ export default function FinanceApp() {
     );
     toast("Backup lengkap berhasil diunduh.");
   }
+  async function migrateSheets() {
+    if (!owner || busy || mode !== "real" || pending) return;
+    setBusy(true); setError("");
+    try {
+      let backupHash = "";
+      if (initialized) {
+        const response = await fetch("/api/backup", { cache: "no-store" });
+        if (!response.ok) throw new Error("Cadangan belum dapat diunduh. Struktur belum diperbarui.");
+        backupHash = response.headers.get("X-Backup-Hash") || "";
+        if (!backupHash) throw new Error("Identitas cadangan tidak tersedia. Muat ulang dan coba kembali.");
+        download(await response.text(), "garda-sebelum-migrasi-" + effectiveDate + ".json", "application/json");
+      }
+      const response = await fetch("/api/setup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operationId: crypto.randomUUID(), backupHash }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Struktur belum dapat diperbarui.");
+      await refreshReal();
+      toast("Struktur laporan versi 2 siap. Transaksi lama dipertahankan.");
+    } catch (e) { setError(e instanceof Error ? e.message : "Pembaruan struktur gagal."); }
+    finally { setBusy(false); }
+  }
   function Brand() {
     return (
-      <div className="brand komando-brand">
-        <span className="brand-emblem">
-          <Icon name="shield" />
-          <b>G</b>
-        </span>
-        <span className="brand-type">
-          GARDA<span>ABDI NEGARA</span>
-          <small>LEARN. TRAIN. SERVE.</small>
-        </span>
+      <div className="terrace-wordmark" aria-label="Garda Abdi Negara">
+        <img src="/favicon.svg" width="35" height="35" alt="" />
+        <span>garda<i>.</i><small>ABDI NEGARA</small></span>
       </div>
     );
   }
@@ -567,7 +638,7 @@ export default function FinanceApp() {
         <Icon name={item[1]} />
         <span>{item[2]}</span>
         {item[0] === "tagihan" && f.overdue > 0 && (
-          <span className="nav-count">1</span>
+          <span className="nav-count">{f.bills.filter(b => b.overdue > 0).length}</span>
         )}
       </button>
     );
@@ -1225,14 +1296,35 @@ export default function FinanceApp() {
     );
   }
   function Invoices() {
+    const activeBills = f.bills.filter(b => !b.cancelled);
+    const face = activeBills.reduce((sum, b) => sum + b.face, 0);
+    const paid = activeBills.reduce((sum, b) => sum + Math.min(b.face, b.paid), 0);
+    const percent = face ? Math.min(100, Math.max(0, paid / face * 100)) : 0;
+    const overdueCount = activeBills.filter(b => b.overdue > 0).length;
+    const remainingCount = activeBills.filter(b => b.remaining > 0).length;
+    const filteredBills = f.bills.filter(b => {
+      const p = invoicePerson(b.invoice);
+      const matches = !query || `${text(p.student, "nama")} ${text(p.program, "nama_program")} ${text(b.invoice, "nomor_tagihan")}`.toLowerCase().includes(query.toLowerCase());
+      return matches && (invoiceFilter === "all" || invoiceFilter === "overdue" && b.overdue > 0 || invoiceFilter === "installment" && b.paid > 0 && b.remaining > 0 && !b.overdue || invoiceFilter === "paid" && b.remaining === 0 && !b.cancelled);
+    });
     return (
       <>
+        <div className="terrace-invoice-summary">
+          <section className="terrace-balance-card">
+            <span className="eyebrow">SISA SELURUH TAGIHAN</span>
+            <strong>{money(f.outstanding)}</strong>
+            <p>{remainingCount} tagihan belum selesai · sampai {dateLabel(to)}</p>
+            <div><span><Icon name="clock" />{overdueCount} tagihan lewat jatuh tempo</span><button className="icon-btn" onClick={() => setInvoiceFilter("overdue")} aria-label="Lihat tagihan terlambat"><Icon name="arrow" /></button></div>
+          </section>
+          <section className="terrace-collection-card panel">
+            <div className="terrace-ring" style={{ background: `conic-gradient(var(--primary) ${percent}%, var(--surface-soft) 0)` }} aria-label={`${Math.round(percent)} persen nilai tagihan telah dibayar`}><span><b>{Math.round(percent)}<small>%</small></b><em>terbayar</em></span></div>
+            <div><span className="eyebrow">PEMBAYARAN TAGIHAN</span><strong>{money(paid)}</strong><p>dari {money(face)} nilai tagihan aktif</p><small>Saldo kredit siswa ditampilkan pada rincian.</small></div>
+          </section>
+        </div>
         <div className="section-actions">
           <div>
-            <Badge warning>Jatuh tempo {money(f.overdue)}</Badge>
-            <span className="muted small">
-              Sisa seluruh tagihan {money(f.outstanding)}
-            </span>
+            <h2>Daftar tagihan</h2>
+            <span className="muted small">{filteredBills.length} tagihan</span>
           </div>
           <div>
             <button
@@ -1252,15 +1344,24 @@ export default function FinanceApp() {
             </button>
           </div>
         </div>
+        <div className="terrace-list-controls">
+          <div className="terrace-filter-tabs" role="group" aria-label="Filter status tagihan">
+            {[["all", "Semua"], ["overdue", "Terlambat"], ["installment", "Cicilan"], ["paid", "Lunas"]].map(([key, label]) => <button key={key} aria-pressed={invoiceFilter === key} onClick={() => setInvoiceFilter(key)}>{label}</button>)}
+          </div>
+          <label className="terrace-search"><Icon name="search" /><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Cari siswa atau nomor tagihan…" aria-label="Cari tagihan" /></label>
+        </div>
         <div className="invoice-grid">
-          {f.bills.map((b) => {
+          {filteredBills.map((b) => {
             const p = invoicePerson(b.invoice);
+            const nextDue = text(b.schedules.find(j => j.remaining > 0) || b.schedules.at(-1), "jatuh_tempo");
+            const due = nextDue ? new Date(`${nextDue}T12:00:00Z`) : null;
             return (
-              <article
+              <details
                 className="panel invoice-card"
                 key={text(b.invoice, "tagihan_id")}
               >
-                <div className="invoice-top">
+                <summary className="invoice-top">
+                  <span className={`terrace-due-date ${b.overdue ? "overdue" : ""}`}><b>{due ? due.getUTCDate() : "—"}</b><small>{due ? new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "UTC" }).format(due) : "TENGGAT"}</small></span>
                   <div className="student-line">
                     <span className="student-avatar">
                       {text(p.student, "nama")
@@ -1274,6 +1375,7 @@ export default function FinanceApp() {
                       <p>{text(p.program, "nama_program")}</p>
                     </div>
                   </div>
+                  <span className="terrace-invoice-amount"><strong>{money(b.remaining)}</strong><small>Sisa tagihan</small></span>
                   <Badge warning={b.overdue > 0}>
                     {b.cancelled
                       ? "Dibatalkan"
@@ -1285,7 +1387,9 @@ export default function FinanceApp() {
                             ? "Sebagian"
                             : "Lunas"}
                   </Badge>
-                </div>
+                  <Icon name="chevron" />
+                </summary>
+                <div className="invoice-details">
                 <span className="muted small">
                   {text(b.invoice, "nomor_tagihan")} ·{" "}
                   {text(b.invoice, "jenis_tagihan")}
@@ -1368,10 +1472,12 @@ export default function FinanceApp() {
                     </button>
                   </div>
                 )}
-              </article>
+                </div>
+              </details>
             );
           })}
         </div>
+        {!!f.bills.length && !filteredBills.length && <Empty title="Tidak ada tagihan yang cocok">Coba nama siswa atau status lain.</Empty>}
         {!f.bills.length && (
           <Empty title="Belum ada tagihan">
             Daftarkan siswa ke program, lalu terbitkan tagihan paket atau
@@ -1382,6 +1488,13 @@ export default function FinanceApp() {
     );
   }
   function Reports() {
+    return <FinancialReports data={data} actor={actor} month={month} canWrite={canWrite} busy={busy} simulation={mode === "demo"} dataAsOf={dataAsOf} execute={execute}>{LegacyReports()}</FinancialReports>;
+  }
+  function LegacyReports() {
+    const reconciliation = reconciliationFor(data, month);
+    const periodClosed = JSON.parse(setting(data, "closed_periods", "[]")).includes(month);
+    const currentAccounts = finance(data, month + "-01", endOfMonth(month)).accounts.filter(a => a.available);
+    const stale = Boolean(reconciliation && (reconciliation.accounts.length !== currentAccounts.length || reconciliation.accounts.some(a => currentAccounts.find(c => c.akun_id === a.akun_id)?.balance !== a.expected)));
     const payments = f.transactions
       .filter((t) => t.jenis === "PEMBAYARAN_SISWA")
       .reduce((s, t) => s + num(t, "nominal"), 0);
@@ -1417,11 +1530,18 @@ export default function FinanceApp() {
                 onClick={() => open({ kind: "period" })}
               >
                 <Icon name="lock" />
-                Tutup / buka periode
+                Cocokkan saldo / tutup bulan
               </button>
             )}
           </div>
         </div>
+        <div className="report-line report-period-state"><span>Status bulan {month}</span><Badge>{periodClosed ? "Periode ditutup" : "Periode terbuka"}</Badge></div>
+        {reconciliation && <section className="panel reconciliation-summary">
+          <h2>Pencocokan saldo {month}</h2>
+          <p className="panel-sub">Posisi {dateLabel(endOfMonth(month))} · Diperiksa {new Date(reconciliation.checkedAt).toLocaleString("id-ID", { timeZone: setting(data, "timezone", "Asia/Jakarta") })} · {reconciliation.note}</p>
+          {stale && <p role="status" className="balance-difference">Saldo tercatat berubah setelah pemeriksaan. Cocokkan ulang sebelum menutup bulan.</p>}
+          {reconciliation.accounts.map(a => <div className="report-line" key={a.akun_id}><span>{a.nama_akun}<small>Nyata {money(a.actual)} · Tercatat {money(a.expected)}</small></span><strong className={a.difference === 0 ? "balance-matched" : "balance-difference"}>{a.difference === 0 ? "Cocok" : `Selisih ${money(a.difference)}`}</strong></div>)}
+        </section>}
         <div className="report-grid">
           <section className="panel report-panel">
             <h2>
@@ -1614,7 +1734,7 @@ export default function FinanceApp() {
               <>
                 <div className="report-line">
                   <span>Struktur spreadsheet</span>
-                  <strong>{initialized ? "Siap" : "Perlu setup"}</strong>
+                  <strong>{initialized ? schemaReady ? "Versi 2 · siap" : "Perlu pembaruan ke versi 2" : "Perlu setup"}</strong>
                 </div>
                 <div className="report-line">
                   <span>Penulisan</span>
@@ -2582,14 +2702,32 @@ export default function FinanceApp() {
       return (
         <>
           <Field label="Bulan">
-            <input name="bulan" type="month" defaultValue={month} required />
+            <input name="bulan" type="month" value={reconcileMonth} onChange={e => { setReconcileMonth(e.target.value); setActualBalances({}); }} required />
           </Field>
           <Field label="Tindakan">
-            <select name="tindakan">
+            <select name="tindakan" value={periodAction} onChange={e => setPeriodAction(e.target.value)}>
+              <option value="reconcile">Simpan pencocokan saldo</option>
               <option value="close">Tutup periode</option>
               <option value="open">Buka kembali</option>
             </select>
           </Field>
+          {periodAction !== "open" && reconcileMonth && (
+            <div className="reconciliation-grid full">
+              <p>Hitung uang tunai dan cocokkan rekening bank per {dateLabel(endOfMonth(reconcileMonth))}. Isi saldo nyata dari hasil pemeriksaan Anda.</p>
+              {finance(data, reconcileMonth + "-01", endOfMonth(reconcileMonth)).accounts.filter(a => a.available).map(a => {
+                const id = text(a, "akun_id"), value = actualBalances[id] ?? "";
+                const difference = value === "" ? null : Number(value) - a.balance!;
+                return <div className="reconciliation-account" key={id}>
+                  <div><strong>{text(a, "nama_akun")}</strong><small>Saldo tercatat {money(a.balance!)}</small></div>
+                  <Field label={`Saldo nyata ${text(a, "nama_akun")}`}>
+                    <input type="number" step="1" min="-1000000000000" max="1000000000000" required value={value} onChange={e => setActualBalances(v => ({ ...v, [id]: e.target.value }))} />
+                  </Field>
+                  <span className={difference === 0 ? "balance-matched" : "balance-difference"}>{difference === null ? "Belum diperiksa" : difference === 0 ? "Saldo cocok" : `Selisih ${money(difference)}`}</span>
+                </div>;
+              })}
+              <small>Selisih dapat disimpan untuk ditelusuri. Penutupan bulan memerlukan seluruh saldo cocok; pencocokan tidak membuat transaksi penyesuaian otomatis.</small>
+            </div>
+          )}
           <p className="form-hint full">
             Periode tertutup:{" "}
             {JSON.parse(setting(data, "closed_periods", "[]")).join(", ") ||
@@ -2659,8 +2797,10 @@ export default function FinanceApp() {
       action = "invoice.adjust.reverse";
       p.penyesuaian_id = modal.id;
     }
-    if (modal.kind === "period")
-      action = form.get("tindakan") === "open" ? "period.open" : "period.close";
+    if (modal.kind === "period") {
+      action = `period.${periodAction}`;
+      p.saldo_nyata = Object.entries(actualBalances).map(([akun_id, nominal]) => ({ akun_id, nominal }));
+    }
     if (action) await execute(action, p);
   }
   function specialModal() {
@@ -2863,7 +3003,7 @@ export default function FinanceApp() {
     adjust: "Penyesuaian tagihan",
     "adjust-history": "Riwayat penyesuaian",
     "adjust-reverse": "Pembetulan penyesuaian",
-    period: "Penutupan periode",
+    period: "Pencocokan saldo & tutup bulan",
   };
   const viewRenderers = {
     dashboard: Dashboard,
@@ -2880,23 +3020,23 @@ export default function FinanceApp() {
       "Pantau kas dan pembayaran siswa dalam satu ruang kerja.",
     ],
     transaksi: [
-      "Setiap transaksi tercatat.",
+      "Transaksi.",
       "Penerimaan, pengeluaran, dan perpindahan dana usaha.",
     ],
     siswa: [
-      "Kenali setiap siswa.",
+      "Daftar siswa.",
       "Pendaftaran program dan kebutuhan pembayaran.",
     ],
     tagihan: [
-      "Pembayaran yang terpantau.",
+      "Tagihan siswa.",
       "Paket, iuran bulanan, dan jadwal cicilan siswa.",
     ],
     laporan: [
-      "Catatan yang bisa ditelusuri.",
-      "Ringkasan keuangan dan rincian transaksi periode ini.",
+      "Laporan keuangan.",
+      "Buku kas, hasil usaha, dan posisi keuangan dalam satu tempat.",
     ],
     pengaturan: [
-      "Aturan keuangan usaha.",
+      "Pengaturan.",
       "Identitas, master data, pengguna, dan jejak perubahan.",
     ],
   };
@@ -2905,7 +3045,7 @@ export default function FinanceApp() {
       <a className="skip-link" href="#main">
         Lewati ke konten
       </a>
-      <div className="shell komando-shell">
+      <div className="shell terrace-shell">
         <aside className="sidebar">
           <Brand />
           <div className="workspace-label">
@@ -2954,23 +3094,13 @@ export default function FinanceApp() {
                 <strong>Keuangan & pembayaran</strong>
               </div>
             </div>
+            <nav className="terrace-nav" aria-label="Navigasi utama Terrace">{NAV.map(navButton)}</nav>
             <div className="appbar-actions">
-              <div className="mode-switch" aria-label="Sumber data">
-                <button
-                  className={mode === "demo" ? "active" : ""}
-                  onClick={useDemo}
-                  disabled={busy}
-                >
-                  Data contoh
-                </button>
-                <button
-                  className={mode === "real" ? "active" : ""}
-                  onClick={() => void loadReal()}
-                  disabled={busy}
-                >
-                  Data nyata
-                </button>
-              </div>
+              <button type="button" className="appearance-toggle" data-appearance-toggle>
+                <svg className="icon when-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 0 1 11.2 3 9 9 0 1 0 21 12.8Z" /></svg>
+                <svg className="icon when-dark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+                <span className="when-light mode-label">Mode gelap</span><span className="when-dark mode-label">Mode terang</span>
+              </button>
               <button
                 className="icon-btn"
                 aria-label="Pemberitahuan"
@@ -2999,6 +3129,10 @@ export default function FinanceApp() {
                     : `Google Sheets · ${actor.role}`}
                 </small>
               </span>
+              <div className="mode-switch" aria-label="Sumber data">
+                <button className={mode === "demo" ? "active" : ""} aria-pressed={mode === "demo"} onClick={useDemo} disabled={busy}>Data contoh</button>
+                <button className={mode === "real" ? "active" : ""} aria-pressed={mode === "real"} onClick={() => void loadReal()} disabled={busy}>Data nyata</button>
+              </div>
               {mode === "demo" ? (
                 <button onClick={() => void loadReal()} disabled={busy}>
                   Gunakan data nyata
@@ -3039,6 +3173,7 @@ export default function FinanceApp() {
                 >
                   Periksa status
                 </button>
+                {retryable && <button className="btn primary" disabled={busy} onClick={() => void retryPending()}>Kirim ulang permintaan yang sama</button>}
               </div>
             )}
             <header className="page-heading">
@@ -3082,6 +3217,7 @@ export default function FinanceApp() {
                 </button>
               </div>
             </header>
+            {mode === "real" && initialized && !schemaReady && <div className="pending-banner no-report-print"><p>Struktur laporan perlu diperbarui ke versi 2. Data lama tetap dapat dibaca. Pemilik dapat mengunduh cadangan lalu memperbarui struktur untuk mengaktifkan pencatatan.</p>{owner && <button className="btn" disabled={busy || !cap?.writeEnabled || !cap?.coordinator} onClick={() => void migrateSheets()}>Cadangkan & perbarui struktur</button>}</div>}
             {mode === "real" && !initialized ? (
               <Empty title="Spreadsheet siap disiapkan">
                 Siapkan tabel keuangan, akun bersaldo nol, dan akses pemilik.
@@ -3092,28 +3228,7 @@ export default function FinanceApp() {
                     disabled={
                       !owner || !cap?.writeEnabled || !cap?.coordinator || busy
                     }
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        const r = await fetch("/api/setup", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            operationId: crypto.randomUUID(),
-                          }),
-                        });
-                        const j = await r.json();
-                        if (!r.ok) throw new Error(j.error);
-                        await refreshReal();
-                        toast("Tabel nyata disiapkan tanpa data contoh.");
-                      } catch (e) {
-                        setError(
-                          e instanceof Error ? e.message : "Setup gagal.",
-                        );
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
+                    onClick={() => void migrateSheets()}
                   >
                     Siapkan spreadsheet
                   </button>
@@ -3137,12 +3252,13 @@ export default function FinanceApp() {
                     ? `Diperbarui ${new Date(dataAsOf).toLocaleTimeString("id-ID", { timeZone: setting(data, "timezone", "Asia/Jakarta") })}`
                     : "Google Sheets"}
               </span>
-              <span>{businessName} · Komando</span>
+              <span>{businessName} · Terrace</span>
               {mode === "real" && (
                 <button
                   className="text-btn"
                   onClick={async () => {
                     await fetch("/api/auth/logout", { method: "POST" });
+                    sessionStorage.removeItem(PENDING_COMMAND_KEY);
                     useDemo();
                     toast("Anda sudah keluar dari data nyata.");
                   }}

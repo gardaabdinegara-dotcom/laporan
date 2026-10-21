@@ -14,6 +14,7 @@ import {
   type Row,
   type Table,
 } from "../domain.ts";
+import { REPORT_TABLES } from "../reporting.ts";
 import { credentials, spreadsheetId, ownerEmail } from "./config.ts";
 import { limit } from "./coordinator.ts";
 
@@ -112,8 +113,8 @@ export async function readState() {
     meta.sheets.some((s) => s.properties.title === t),
   );
   const state = emptyState();
-  if (!existing.length) return { state, initialized: false, meta };
-  if (existing.length !== TABLES.length)
+  if (!existing.length) return { state, initialized: false, schemaReady: false, meta };
+  if (TABLES.filter(t => !(REPORT_TABLES as readonly string[]).includes(t)).some(t => !existing.includes(t)))
     throw new DomainError(
       "Struktur spreadsheet belum lengkap. Jalankan setup untuk menambahkan tabel yang hilang.",
       "SCHEMA_INCOMPLETE",
@@ -175,10 +176,11 @@ export async function readState() {
       );
   });
   validateState(state);
-  return { state, initialized: true, meta };
+  return { state, initialized: true, schemaReady: existing.length === TABLES.length && state.Pengaturan.some(r => r.key === "schema_version" && String(r.value) === "2"), meta };
 }
 export async function setupSheets() {
   const meta = await metadata(true);
+  const previous = await readState();
   const missing = TABLES.filter(
     (t) => !meta.sheets.some((s) => s.properties.title === t),
   );
@@ -234,6 +236,15 @@ export async function setupSheets() {
         },
       },
     });
+  }
+  if (previous.initialized) {
+    const settingsSheet = meta.sheets.find(s => s.properties.title === "Pengaturan")!;
+    const versionIndex = previous.state.Pengaturan.findIndex(r => r.key === "schema_version");
+    if (versionIndex >= 0 && String(previous.state.Pengaturan[versionIndex].value) !== "2") requests.push({ updateCells: {
+      start: { sheetId: settingsSheet.properties.sheetId, rowIndex: versionIndex + 1, columnIndex: 1 },
+      rows: [{ values: [cell("2")] }], fields: "userEnteredValue",
+    } });
+    else if (versionIndex < 0) requests.push({ appendCells: { sheetId: settingsSheet.properties.sheetId, rows: [cells("Pengaturan", { key: "schema_version", value: "2" })], fields: "userEnteredValue" } });
   }
   if (requests.length) {
     requests.push({
@@ -294,7 +305,7 @@ export async function restoreToBlank(backup: State) {
   )
     throw new DomainError("Backup harus memiliki OWNER aktif.");
   const loaded = await readState();
-  if (!loaded.initialized)
+  if (!loaded.initialized || !loaded.schemaReady)
     throw new DomainError(
       "Jalankan setup pada spreadsheet tujuan terlebih dahulu.",
     );
@@ -306,6 +317,7 @@ export async function restoreToBlank(backup: State) {
       "Tagihan",
       "Operasi",
       "Penyesuaian_Tagihan",
+      ...REPORT_TABLES,
     ].some((t) => loaded.state[t as Table].length > 0) ||
     loaded.state.Akun.some((a) => Number(a.saldo_awal) !== 0)
   )

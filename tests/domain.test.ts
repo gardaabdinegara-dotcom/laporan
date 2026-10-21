@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { operationStatus, restorePendingCommand } from "../lib/pending-command.ts";
 import {
   applyCommand,
   demoState,
@@ -9,6 +10,8 @@ import {
   dueDate,
   validateState,
   DomainError,
+  reconcileAccounts,
+  setting,
   type State,
   type Actor,
 } from "../lib/domain.ts";
@@ -307,6 +310,7 @@ test("periode tutup menolak semua transaksi bertanggal dalam bulan itu", () => {
   const s = mutate(demoState(), "period.close", {
     bulan: "2026-10",
     alasan: "Saldo sudah cocok",
+    saldo_nyata: report(demoState()).accounts.map(a => ({ akun_id: a.akun_id, nominal: a.balance })),
   });
   assert.throws(
     () =>
@@ -426,4 +430,55 @@ test("tautan bukti harus HTTPS dan jumlah cicilan harus cocok", () => {
       }),
     /Jumlah/,
   );
+});
+
+test("pencocokan menyimpan selisih tanpa mengubah saldo buku", () => {
+ const before=demoState();
+ const actual=report(before).accounts.map(a=>({akun_id:a.akun_id,nominal:a.balance!+1000}));
+ const after=mutate(before,"period.reconcile",{bulan:"2026-10",alasan:"Selisih perlu ditelusuri",saldo_nyata:actual});
+ const saved=JSON.parse(setting(after,"reconciliation:2026-10"));
+ assert.equal(saved.accounts[0].difference,1000);
+ assert.equal(report(after).balance,report(before).balance);
+ assert.equal(after.Transaksi.length,before.Transaksi.length);
+ assert.equal(setting(after,"closed_periods"),"[]");
+ assert.throws(()=>mutate(after,"period.close",{bulan:"2026-10",alasan:"Uji selisih",saldo_nyata:actual}),/belum cocok/);
+});
+test("tutup bulan memerlukan saldo nyata semua akun dan pemeriksaan terbaru", () => {
+ const before=demoState(),actual=report(before).accounts.map(a=>({akun_id:a.akun_id,nominal:a.balance}));
+ assert.throws(()=>mutate(before,"period.close",{bulan:"2026-10",alasan:"Tanpa pemeriksaan"}),/saldo nyata/i);
+ assert.throws(()=>reconcileAccounts(before,"2026-10",actual.slice(0,1)),/setiap akun/);
+ assert.throws(()=>reconcileAccounts(before,"2026-10",[actual[0],actual[0]]),/setiap akun/);
+ assert.throws(()=>reconcileAccounts(before,"2026-10",actual.map(a=>({...a,nominal:""}))),/rupiah utuh/);
+ const changed=mutate(before,"transaction.create",{jenis:"BIAYA",akun_id:"cash",kategori_id:"honor",nominal:1000,tanggal_transaksi:"2026-10-13",deskripsi:"Biaya setelah pemeriksaan"});
+ assert.throws(()=>mutate(changed,"period.close",{bulan:"2026-10",alasan:"Saldo lama",saldo_nyata:actual}),/belum cocok/);
+ const latest=report(changed).accounts.map(a=>({akun_id:a.akun_id,nominal:a.balance}));
+ const closed=mutate(changed,"period.close",{bulan:"2026-10",alasan:"Sudah diperiksa ulang",saldo_nyata:latest});
+ assert.equal(JSON.parse(setting(closed,"reconciliation:2026-10")).accounts.every((a:{difference:number})=>a.difference===0),true);
+ assert.throws(()=>mutate(closed,"period.reconcile",{bulan:"2026-10",alasan:"Ubah arsip",saldo_nyata:latest}),/ditutup/);
+});
+test("pencocokan dan pembukaan periode dibatasi pada OWNER serta mempertahankan jejak", () => {
+ const before=demoState(),actual=report(before).accounts.map(a=>({akun_id:a.akun_id,nominal:a.balance}));
+ assert.throws(()=>mutate(before,"period.reconcile",{bulan:"2026-10",alasan:"Uji peran",saldo_nyata:actual},admin),/pemilik/);
+ const closed=mutate(before,"period.close",{bulan:"2026-10",alasan:"Tutup bulan",saldo_nyata:actual});
+ const reopened=mutate(closed,"period.open",{bulan:"2026-10",alasan:"Koreksi terkontrol"});
+ assert.equal(setting(reopened,"closed_periods"),"[]");
+ assert.equal(setting(reopened,"reconciliation:2026-10"),setting(closed,"reconciliation:2026-10"));
+ const corrupt=structuredClone(closed);corrupt.Pengaturan.find(r=>r.key==="reconciliation:2026-10")!.value="invalid";
+ assert.throws(()=>validateState(corrupt),/pencocokan saldo/);
+});
+
+test("pemulihan hanya menawarkan kirim ulang ketika gerbang kosong",()=>{
+ assert.equal(operationStatus(false,"original","original"),"VERIFYING");
+ assert.equal(operationStatus(false,"original","another-operation"),"BUSY");
+ assert.equal(operationStatus(false,"original",null),"RETRYABLE");
+ assert.equal(operationStatus(true,"original","original"),"COMMITTED");
+});
+test("pemulihan mempertahankan ID dan isi asli serta menolak akun atau format berbeda",()=>{
+ const command={operationId:randomUUID(),action:"payment.create",data:{tagihan_id:"invoice",nominal:100000}};
+ const saved=JSON.stringify({actorId:"owner",command});
+ assert.deepEqual(restorePendingCommand(saved,"owner",command.operationId),command);
+ assert.equal(restorePendingCommand(saved,"another-account",command.operationId),null);
+ assert.equal(restorePendingCommand(saved,"owner",randomUUID()),null);
+ assert.equal(restorePendingCommand("invalid","owner",command.operationId),null);
+ assert.equal(restorePendingCommand(JSON.stringify({actorId:"owner",command:{...command,data:[]}}),"owner",command.operationId),null);
 });

@@ -180,3 +180,38 @@ Jika operasi tidak ditemukan, **ketiadaan baris sesaat belum membuktikan penulis
 ## Batas verifikasi saat penyerahan
 
 Build produksi, pengujian aturan keuangan, alur browser, setup tabel, pembacaan Google Sheets, serta penolakan akses tanpa izin telah diperiksa. Login Google melalui consent screen produksi dan penyimpanan keuangan melalui Redis nyata belum diuji karena kredensial OAuth/Redis belum tersedia. Verifikasi kedua alur itu setelah environment akun Anda diisi, sebelum menerima transaksi operasional.
+
+## 11. Pencocokan saldo dan pemulihan terbaru
+
+Pada Laporan, gunakan Cocokkan saldo / tutup bulan. Isi jumlah uang tunai yang dihitung dan saldo rekening pada akhir bulan. Simpan pencocokan dapat mencatat selisih untuk ditelusuri; Tutup periode memerlukan saldo seluruh akun cocok. Perubahan saldo sesudah pemeriksaan meminta pencocokan ulang. Catatan tersimpan di Pengaturan dengan key reconciliation:YYYY-MM, sehingga tidak memerlukan tab baru atau migrasi data lama.
+
+Periksa status kini membedakan gerbang penulisan kosong dari gerbang yang masih memproses request. Jika kosong dan tab masih menyimpan permintaan asli, tombol Kirim ulang permintaan yang sama dapat dipakai. Ketiadaan operasi tidak membuktikan kegagalan request sebelumnya, sehingga retry selalu memakai ID/isi yang sama dan diperiksa ulang di server. Jangan menutup tab saat hasil belum pasti. sessionStorage tab menyimpan envelope sementara; tidak menyimpan kredensial. Logout dan keberhasilan menghapus envelope. ID pada localStorage tetap digunakan untuk pemeriksaan lintas reload.
+
+Penolakan validasi yang terkonfirmasi disimpan sebagai metadata Redis terikat ID, hash, dan actor. Status REJECTED membebaskan permintaan tertahan pada browser agar isian bisa diperbaiki. Salinan request lama tetap ditolak. Metadata ini tidak berisi payload transaksi dan tidak diberi kedaluwarsa otomatis. Jangan menghapusnya saat aplikasi masih menerima retry.
+
+## 12. Pembaruan laporan dan migrasi struktur versi 2 — 21 Oktober 2026
+
+Rilis laporan menambah enam tabel: Pemetaan_Laporan, Aset, Saldo_Neraca, Jurnal_Laporan, Tarif_Pajak, dan Pembayaran_Pajak. Header 12 tabel lama dan tab Sheet1 dipertahankan. Tabel baru pada data nyata dimulai kosong, dengan schema_version menjadi 2. Nominal contoh dan tarif 0,50% pada PDF tidak diimpor.
+
+Untuk migrasi lewat aplikasi, login sebagai OWNER pada versi aplikasi terbaru. Sumber versi 1 tampil dalam mode baca dengan banner **Cadangkan & perbarui struktur**. Tindakan ini mengunduh cadangan, lalu mengirim identitas cadangan ke server. Server memeriksa ulang identitas data setelah memperoleh gerbang Redis; perubahan data sejak cadangan akan menolak migrasi dan meminta cadangan baru. Selesai migrasi, muat ulang data dan lengkapi **Laporan → Kelola laporan**.
+
+Alternatif pemeliharaan dari CLI:
+
+```powershell
+# Hentikan semua instance/penulis dan gunakan APP_WRITE_ENABLED=false.
+New-Item -ItemType Directory -Path backups -Force
+npm run sheets:setup
+npm run sheets:setup -- --apply --backup backups/sebelum-laporan-v2-baru.json
+npm run sheets:check
+npm run backup:validate -- backups/sebelum-laporan-v2-baru.json
+```
+
+Path cadangan harus baru dan disimpan privat. Perintah membuat file cadangan sebelum mengubah struktur; kegagalan membuat cadangan menghentikan migrasi. Mengulang migrasi yang sudah selesai tidak menambah tabel/record atau mengirim penulisan baru. Konfirmasikan sumber dan versi skema sebelum mengaktifkan kembali penulis.
+
+Backup JSON versi 1 dan 2 dapat divalidasi/dipulihkan. Pemulihan versi 1 menambahkan tabel laporan kosong tanpa mengganti ID transaksi, tagihan, atau nominal. Pemulihan hanya menuju sumber kosong dengan struktur versi 2 yang sudah disiapkan; sumber berisi aset, jurnal, saldo awal neraca, atau data operasional juga ditolak.
+
+Sesudah migrasi, OWNER menetapkan dasar **kas dengan penyesuaian nonkas**, pemetaan kategori, data aset, pembukaan neraca yang seimbang, serta aturan omzet/tarif pajak. Penyesuaian piutang/uang muka/kewajiban memakai jurnal nonkas. Angka sebelum awal pembukuan atau data yang belum lengkap tetap Draf. Perubahan yang memengaruhi periode tertutup memerlukan pembukaan kembali beserta alasan.
+
+Pemeriksaan pascarilis mencakup buku kas per akun/gabungan, carry saldo Desember–Januari, pembelian aset tanpa pengeluaran ganda, penyusutan akhir bulan, pembalik jurnal, pembayaran pajak untuk tahun berbeda, izin peran, CSV, dan cetak putih dalam kedua mode antarmuka. Uji mutasi lengkap pada spreadsheet uji terpisah sebelum sumber produksi.
+
+Uji migrasi otomatis memakai Google Sheets API tiruan dan kredensial sintetis. Pengujian tersebut tidak menyatakan OAuth, Redis, migrasi, atau penyimpanan operasional produksi telah diverifikasi.

@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3012",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/domain.test.ts",
+    "test": "node --conditions=react-server --experimental-strip-types --test tests/*.test.ts",
     "check": "npm run typecheck && npm run test",
     "env:check": "node scripts/check-env.mjs",
     "sheets:setup": "node --conditions=react-server --experimental-strip-types scripts/sheets-maintenance.ts setup",

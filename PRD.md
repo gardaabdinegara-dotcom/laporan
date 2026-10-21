@@ -2,14 +2,15 @@
 
 | Informasi | Keterangan |
 | --- | --- |
-| Versi | 1.0 |
+| Versi | 1.2 |
 | Tanggal | 13 Oktober 2026 |
+| Revisi terakhir | 21 Oktober 2026 |
 | Pemilik produk | Pengelola bimbingan belajar |
 | Nama produk sementara | Garda Abdi Negara — Keuangan |
 | Sasaran | Bimbel skala kecil untuk persiapan TNI dan sekolah kedinasan |
 | Database utama | Google Sheets |
 | Hosting yang dituju | Vercel |
-| Status dokumen | Rancangan kebutuhan untuk implementasi. Aplikasi dan deployment belum dibuat. |
+| Status dokumen | Kebutuhan dasar beserta pembaruan yang disetujui untuk implementasi. Spesifikasi tambahan laporan ada pada bagian 21; keputusan implementasi pada bagian 22 dan hasil verifikasi pada STATUS_IMPLEMENTASI.md. |
 
 ## 1. Ringkasan produk
 
@@ -120,6 +121,8 @@ Pemilik dapat menjalankan seluruh pekerjaan sendiri. Peran admin dan pembaca ber
 ### 5.3 Di luar cakupan versi awal
 
 Payment gateway, sinkronisasi mutasi bank, pembayaran online otomatis, absensi dan materi belajar, payroll otomatis, pencatatan aset/penyusutan, stok barang, laporan pajak, akuntansi akrual lengkap, dan banyak cabang.
+
+Daftar ini merupakan batas versi awal. Rancangan perluasan laporan, termasuk aset/penyusutan dan rekap omzet/pajak berdasarkan contoh pengguna, dijabarkan pada bagian 21.
 
 ## 6. Halaman dan pengalaman pengguna
 
@@ -670,3 +673,101 @@ Rilis pertama dianggap selesai ketika:
 - Tersedia README setup, deployment, penggantian kredensial, backup/pemulihan, serta penanganan operasi yang sedang diverifikasi.
 
 Dokumen ini menyelesaikan tahap perumusan kebutuhan. Pemenuhan definisi selesai di atas merupakan pekerjaan implementasi berikutnya.
+
+## 19. Perbaikan disetujui — 15 Oktober 2026
+
+Pengguna menyetujui seluruh cakupan peninjauan: keamanan simpan presensi, arsip rapor siswa nonaktif, pemulihan transaksi keuangan saat koneksi gagal, pencocokan kas/bank, dan penyederhanaan ponsel. Bagian Keuangan mempertahankan Sheets sebagai sumber data dan Redis sebagai koordinator.
+
+- Periksa status membedakan tersimpan, masih diproses, penulis lain aktif, dan gerbang kosong. Gerbang kosong hanya memperbolehkan retry dengan operation ID dan isi asli; bukan bukti bahwa request lama gagal.
+- Permintaan asli ditahan sementara pada sessionStorage tab dan terikat akun. Keberhasilan dan logout menghapus isinya. Jika tab asli sudah tidak tersedia, gunakan pemeriksaan status/pemeliharaan, tanpa mengarang transaksi pengganti.
+- Pencocokan menyimpan saldo tercatat, saldo nyata, selisih per akun, pemeriksa, waktu, dan catatan pada Pengaturan untuk bulan tersebut. Selisih tidak membuat transaksi penyesuaian otomatis.
+- OWNER dapat menyimpan pemeriksaan dengan selisih, tetapi penutupan bulan memerlukan seluruh akun pada akhir bulan diperiksa dan selisih nol. Saldo dibandingkan ulang dengan sumber terbaru saat simpan. Periode tertutup melindungi hasil pemeriksaan; pembukaan kembali memakai alasan dan audit.
+- Ponsel memakai ringkasan lebih ringkas, kontrol sentuh minimal 44 px, dan input 16 px. Bukti uji mencakup data contoh dan sumber sintetis terisolasi. Login OAuth, Redis, dan transaksi produksi tetap diverifikasi sesudah deployment.
+
+## 20. Terrace terang/gelap — pilihan 15 Oktober 2026
+
+Pengguna memilih Terrace untuk Keuangan dan Presensi, lengkap dengan mode terang/gelap. Desktop menggunakan navigasi atas; ponsel menggunakan navigasi bawah. Tagihan menampilkan ringkasan kewajiban/pembayaran, baris yang dapat dibuka, pencarian siswa/nomor tagihan, dan filter Semua, Terlambat, Cicilan, Lunas. Tindakan pembayaran, penyesuaian, refund, dan riwayat tetap tersedia di rincian.
+
+Mode pertama mengikuti sistem; pilihan manual lewat tombol bulan/matahari disimpan pada origin browser. Formulir, dialog, tabel, grafik, dan status mengikuti palet. Font tersedia lokal. Mode tidak mengubah data, peran, saldo, atau aturan koordinasi transaksi. Cetak memakai palet terang.
+
+## 21. Pembaruan laporan — 21 Oktober 2026
+
+### 21.1 Tujuan dan acuan
+
+Pengguna memberikan dua contoh laporan tahun 2025 dan kemudian meminta implementasi pembaruan sesuai PRD dengan desain Terrace terang/gelap. Sasaran pembaruan adalah menghasilkan buku kas bulanan dan laporan tahunan yang saling terhubung dari satu sumber transaksi. Hasil implementasi dan batas verifikasi dicatat pada STATUS_IMPLEMENTASI.md; persetujuan implementasi tidak menyatakan deployment atau migrasi produksi telah dilakukan.
+
+| Acuan pengguna | Kebutuhan yang diambil |
+| --- | --- |
+| `E:/Downloads/Laporan Keuangan Bimbel 2025asds.pdf` | Buku kas Januari–Desember: saldo awal, tanggal, keterangan, pemasukan/pengeluaran, saldo berjalan, dan saldo akhir |
+| `E:/Downloads/Laporan Keuangan 2025.pdf` | Laba rugi, neraca, daftar aset dan penyusutan, serta rekap omzet/pajak per bulan |
+
+Dokumen dipakai sebagai contoh format dan struktur laporan. Nominal, nama siswa, tarif pajak, dan saldo pada contoh tidak otomatis menjadi data operasional. Kategori yang dicontohkan meliputi biaya jasa (pengajar, pelatih, makan, bahan belajar), utilitas, pemasaran, pemeliharaan, penyusutan, dan pajak; pemetaan akhirnya ditinjau saat penyiapan data.
+
+### 21.2 Keluaran laporan
+
+| ID | Keluaran | Hasil yang harus tersedia |
+| --- | --- | --- |
+| REP-01 | Buku kas bulanan | Saldo awal terpisah dari penerimaan, tanggal/keterangan, kolom Pemasukan dan Pengeluaran, saldo setiap transaksi, total mutasi, dan saldo akhir; pilihan satu akun atau gabungan kas/bank |
+| REP-02 | Laba rugi bulanan/tahunan | Pendapatan, biaya jasa, laba kotor, biaya operasional per kelompok, penyusutan, pendapatan/biaya lain, dan laba/rugi bersih; dasar pengakuan angka ditampilkan |
+| REP-03 | Neraca per tanggal | Kas/bank, piutang yang diakui, aset dan akumulasi penyusutan, kewajiban, modal, serta laba ditahan; nilai aset dibandingkan dengan jumlah kewajiban dan ekuitas |
+| REP-04 | Aset dan penyusutan | Daftar aset, tanggal perolehan dan mulai penyusutan, biaya perolehan, umur manfaat, nilai residu, saldo penyusutan awal, penyusutan bulanan/tahunan, akumulasi, dan nilai buku |
+| REP-05 | Rekap omzet dan pajak | Omzet per bulan dan total tahun, dasar omzet yang digunakan, konfigurasi tarif beserta periode berlakunya, hasil perhitungan, dan pembayaran yang ditautkan ke periode pajaknya |
+| REP-06 | Pemeriksaan antar laporan | Pemeriksaan saldo kas, total pendapatan/biaya, penyusutan, aset, dan keseimbangan neraca; selisih dapat dibuka sampai ke sumber data dan tidak menghasilkan penyesuaian otomatis |
+| REP-07 | Ekspor dan cetak | Pilihan bulan/tahun atau tanggal sesuai jenis laporan, CSV rincian, serta tampilan cetak/PDF dengan identitas perusahaan, periode, tanggal terbit, lokasi, dan nama/jabatan penandatangan |
+
+Laporan aset yang lebar memakai cetak landscape dengan header tabel berulang. Cetak laporan memakai palet terang, pemisah halaman yang jelas, dan total yang mudah dibaca. Antarmuka mengikuti Terrace, mode terang/gelap, dan navigasi desktop/ponsel pada bagian 20.
+
+### 21.3 Data dan aturan perhitungan
+
+1. **Satu sumber transaksi.** Laporan membaca transaksi yang telah terkonfirmasi. Pembayaran siswa, refund, transfer, pembalik, dan penyesuaian mengikuti kendali simpan serta audit yang sudah ditetapkan. Pengguna tidak mengetik ulang total pada setiap laporan.
+2. **Saldo berjalan dapat ditelusuri.** Urutan transaksi menggunakan tanggal bisnis dan urutan tersimpan yang konsisten. Saldo awal bulan dihitung dari histori sebelum bulan tersebut; saldo akhir menjadi saldo awal bulan berikutnya. Saldo awal dan transfer internal tidak menambah omzet. Pada buku kas gabungan, transfer internal bernilai neto nol; pada satu akun, sisi mutasinya tetap terlihat.
+3. **Pemetaan kategori berversi.** Kategori transaksi ditautkan ke kelompok laporan. Pembelian aset dipisahkan dari biaya operasional. Perubahan pemetaan setelah periode ditutup mengikuti pembukaan kembali dan audit sehingga laporan historis tidak berubah diam-diam.
+4. **Dasar pengakuan harus jelas.** Ringkasan kas yang ada tetap bernama surplus operasional berbasis kas. Laporan laba rugi dan neraca membutuhkan aturan tertulis tentang pengakuan pendapatan, piutang, uang muka siswa, biaya, dan kewajiban. Sisa tagihan tidak otomatis dianggap seluruhnya sebagai piutang akuntansi. Pilihan aturan ini menjadi bagian penetapan model perhitungan sebelum laporan tersebut dinyatakan final.
+5. **Pencatatan aset terhubung.** Pembelian aset ditautkan ke transaksi kas yang sudah ada atau saldo awal aset; penautan tidak membuat pengeluaran kedua. Penyusutan merupakan penyesuaian nonkas dan tidak mengurangi saldo kas. Metode, umur manfaat, nilai residu, dan tanggal mulai tercatat sebagai konfigurasi yang dapat diperiksa. Pembulatan rupiah tidak membuat total penyusutan melampaui nilai yang disusutkan.
+6. **Saldo awal neraca terverifikasi.** Kas, piutang, aset, akumulasi penyusutan, kewajiban, modal, dan laba ditahan mempunyai tanggal acuan serta sumber. Selisih tidak otomatis dimasukkan sebagai laba ditahan atau modal. Penyesuaian nonkas menggunakan catatan yang seimbang, referensi, pelaku, dan alasan.
+7. **Periode pajak terpisah dari tanggal bayar.** Contoh memuat pembayaran pajak tahun 2024 pada Juni 2025. Aplikasi perlu menyimpan periode kewajiban dan tanggal kas keluar secara terpisah. Tarif 0,50% pada contoh hanya merupakan nilai referensi; tarif dan dasar perhitungan yang berlaku bagi usaha harus ditetapkan sebelum fitur dipakai sebagai laporan final.
+8. **Kelengkapan terlihat.** Angka dengan saldo awal, pemetaan, atau aturan pengakuan yang belum lengkap diberi status Draf/belum lengkap, bukan dianggap nol. Semua laporan menampilkan periode, waktu data, dasar perhitungan, dan rincian pembentuk angka.
+9. **Hak akses dan migrasi.** OWNER mengatur saldo awal, pemetaan, aturan aset/pajak, serta koreksi dan penutupan. ADMIN mencatat transaksi sesuai izin; VIEWER membaca laporan sesuai pembatasan yang ada. Tambahan struktur Sheets harus berversi, dapat dijalankan ulang, didahului backup, dan mempertahankan tabel serta ID transaksi lama.
+
+### 21.4 Temuan pada contoh yang perlu ditelusuri
+
+| Temuan | Hasil pemeriksaan dan tindak lanjut |
+| --- | --- |
+| Saldo buku kas dan neraca berbeda | Saldo akhir Desember pada buku kas Rp14.940.000; kas/bank pada neraca Rp14.140.000. Selisih Rp800.000 perlu ditelusuri dari bukti dan sumber saldo, tanpa memilih salah satu sebagai saldo awal otomatis. |
+| Pemeriksaan aritmetika buku kas setahun | Saldo awal Rp19.820.000 + penerimaan Rp134.500.000 − pengeluaran Rp139.380.000 = Rp14.940.000. Ini pemeriksaan atas contoh, bukan konfirmasi saldo nyata usaha. |
+| Tahun pajak dan tahun pembayaran berbeda | Pengeluaran Rp880.000 bertuliskan pajak tahun 2024; rekap omzet 2025 mencantumkan perhitungan Rp672.500. Kedua angka tidak langsung dianggap salah karena periodenya berbeda. |
+| Saldo penyusutan sebelum 2025 | Dasar saldo penyusutan 2024 dan tanggal mulai beberapa aset perlu diperiksa sebelum membuat jadwal otomatis. Angka contoh tidak menetapkan metode atau kebijakan aset usaha. |
+
+### 21.5 Urutan pengerjaan yang diusulkan
+
+| Tahap | Pekerjaan | Syarat selesai |
+| --- | --- | --- |
+| A. Buku kas dan periode | Pemilihan periode bulanan/tahunan, saldo berjalan, rekap omzet, rincian sumber, dan cetak rapi | Saldo awal + mutasi = saldo akhir untuk tiap akun dan gabungan; pergantian bulan konsisten |
+| B. Dasar laporan tahunan | Pemetaan kategori, aturan pengakuan, saldo awal neraca, aset, dan penyesuaian nonkas | Data awal dapat ditelusuri, tidak ada pengeluaran aset ganda, dan perubahan memiliki audit |
+| C. Laporan lengkap | Laba rugi, neraca, penyusutan, rekap pajak yang dikonfigurasi, serta pemeriksaan antar laporan | Seluruh total konsisten, selisih terlihat, dan status final hanya tersedia setelah kelengkapan data dan aturan terpenuhi |
+
+Contoh PDF dapat digunakan sebagai bahan uji terisolasi setelah masalah sumber diberi penanda. Data contoh tidak dicampur dengan spreadsheet operasional. Perubahan rancangan ini hanya menyangkut aplikasi Keuangan; pilihan Terrace terang/gelap untuk kedua aplikasi tetap menjadi acuan desain.
+
+### 21.6 Kriteria penerimaan tambahan
+
+- Buku kas memakai label Pemasukan/Pengeluaran yang jelas dan tidak menghitung saldo awal sebagai penerimaan.
+- Total penerimaan dan biaya untuk periode yang sama dapat ditelusuri ke transaksi; pembalik dan refund dihitung sekali dengan arah yang benar.
+- Urutan transaksi pada tanggal yang sama tetap konsisten; saldo akhir Desember menjadi saldo awal Januari tahun berikutnya.
+- Transfer antarrekening tidak mengubah saldo total maupun omzet; rincian akun tetap menunjukkan mutasinya.
+- Pengeluaran pembelian aset mengubah kas sekali; pencatatan dan penyusutan aset tidak menciptakan arus kas tambahan.
+- Penyusutan sebelum tanggal mulai dan setelah nilai yang dapat disusutkan habis tidak muncul; jumlah bulanan/tahunan konsisten setelah pembulatan.
+- Angka kas/bank di neraca sama dengan buku kas pada tanggal dan cakupan akun yang sama; total aset sama dengan kewajiban ditambah ekuitas. Selisih menghasilkan status pemeriksaan, tanpa angka penyeimbang otomatis.
+- Dasar pendapatan, piutang, uang muka, serta biaya digunakan secara konsisten antara rincian dan laporan; data yang belum lengkap mempertahankan status Draf.
+- Pembayaran pajak menyimpan tanggal kas dan periode kewajiban; perubahan tarif tidak mengubah perhitungan periode lama tanpa proses koreksi.
+- Cetak memperlihatkan periode, identitas perusahaan, total, nomor halaman, dan ruang tanda tangan; tabel tidak terpotong tanpa header lanjutan.
+- Laporan tetap dapat dipakai di ponsel dalam mode terang dan gelap; CSV/cetak mematuhi pembatasan data tiap peran.
+
+## 22. Keputusan implementasi laporan — 21 Oktober 2026
+
+- Dashboard dan Ringkasan kas mempertahankan surplus operasional berbasis kas. Laporan laba rugi/neraca menyediakan model **kas dengan penyesuaian nonkas**, yang ditetapkan pemilik secara eksplisit. Pengakuan piutang, uang muka, serta kewajiban memakai saldo awal/jurnal; tidak menganggap seluruh tagihan sebagai piutang otomatis.
+- Pembelian aset ditautkan ke satu transaksi biaya dengan nominal/tanggal yang sama. Aset lama menggunakan pembukaan nonkas. Penyusutan garis lurus diakui setiap akhir bulan, memakai pembulatan kumulatif, nilai residu, dan akumulasi awal terverifikasi.
+- Jurnal penyesuaian seimbang, tanpa akun kas atau akun aset otomatis. Koreksi menggunakan pembalik dengan tanggal efektif. Seluruh perintah memakai operation ID, peran OWNER, gerbang simpan, dan audit yang sama.
+- Sumber versi 2 menambah enam tabel laporan (total 18). Migrasi mempertahankan data lama, memerlukan cadangan terbaru, dan dapat diulang. Backup versi 1 dipulihkan dengan tabel laporan kosong tanpa mengubah ID/nominal.
+- Pemetaan dan tarif berversi menurut bulan berlaku. Model omzet pajak dapat berupa penerimaan jasa bruto atau pendapatan jasa setelah penyesuaian. Pembayaran dapat ditautkan ke tahun/bulan kewajiban dan dipilih sebagai beban atau pelunasan utang.
+- Laporan yang belum lengkap berstatus Draf. Periode yang belum berakhir ditandai proyeksi. CSV memuat periode, status, dan sumber; VIEWER mendapat ringkasan. Cetak putih memakai header tabel berulang, nomor halaman, dan ruang tanda tangan; daftar aset memakai landscape.
+- Contoh 2025 menjadi fixture pengujian terisolasi, termasuk selisih sumber Rp800.000. Tidak ada impor otomatis ke spreadsheet operasional.

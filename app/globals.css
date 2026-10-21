@@ -4138,3 +4138,35 @@ th {
     display: none !important;
   }
 }
+
+/* Operational forms and compact phone layout. */
+.reconciliation-grid { grid-column:1/-1; display:grid; gap:16px; min-width:0; }
+.reconciliation-grid>p,.reconciliation-grid>small { font-size:12px; color:var(--muted); line-height:1.7; }
+.reconciliation-account { display:grid; gap:12px; padding:16px; border:1px solid var(--line); border-radius:12px; min-width:0; }
+.reconciliation-account>div>strong { font-size:14px; }
+.reconciliation-account small,.reconciliation-summary .report-line small { display:block; font-size:12px; margin-top:5px; line-height:1.6; }
+.reconciliation-summary { padding:22px; margin-bottom:20px; }
+.reconciliation-summary h2 { font-size:18px; margin-bottom:8px; }
+.balance-matched { color:#24634a; font-size:12px; }
+.balance-difference { color:#a3482c; font-size:12px; }
+.pending-banner { flex-wrap:wrap; }
+@media screen and (max-width:640px) {
+ .command-hero { min-height:0; padding:22px; }
+ .command-hero .hero-content { padding:0; max-width:none; width:100%; }
+ .command-hero .hero-balance { font-size:34px; line-height:1.2; margin:10px 0; }
+ .command-hero .hero-insignia { display:none; }
+ .command-hero .hero-eyebrow { display:none; }
+ .hero-balance-label { margin:0 0 6px; font-size:12px; }
+ .hero-actions { margin-top:14px; gap:12px; flex-direction:row; align-items:center; flex-wrap:wrap; }
+ .hero-actions>.btn { min-height:44px; }
+ .hero-actions>span { flex:1; min-width:90px; line-height:1.6; }
+ .page-heading h1 { font-size:26px; line-height:1.25; }
+ .page-heading p { font-size:12px; }
+ .field input,.field select,.field textarea { font-size:16px; min-height:44px; }
+ .reconciliation-account { padding:14px; }
+ .reconciliation-summary { padding:18px; }
+ .reconciliation-summary .report-line { align-items:flex-start; gap:12px; flex-wrap:wrap; }
+ .pending-banner>.btn { width:100%; min-height:44px; white-space:normal; }
+}
+
+.report-period-state { padding:12px 0; margin-bottom:12px; gap:12px; flex-wrap:wrap; }

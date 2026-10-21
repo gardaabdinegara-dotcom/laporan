@@ -10,6 +10,21 @@ export type Gate = {
   startedAt: number;
   actorId: string;
 };
+export type Rejection = { hash: string; actorId: string; error: string; code: string; status: number };
+type RejectionClient = {
+  get<T>(key: string): Promise<T | null>;
+  set(key: string, value: Rejection, options: { nx: true }): Promise<unknown>;
+};
+export function createRejections(client: RejectionClient, prefix: string) {
+  return {
+    read: (operationId: string) => client.get<Rejection>(prefix + operationId),
+    record: async (gate: Gate, error: DomainError) => {
+      const rejected: Rejection = { hash: gate.hash, actorId: gate.actorId, error: error.message, code: error.code, status: error.status };
+      await client.set(prefix + gate.operationId, rejected, { nx: true });
+      return rejected;
+    },
+  };
+}
 const redis = () => {
   if (
     !process.env.UPSTASH_REDIS_REST_URL ||
@@ -23,6 +38,9 @@ const redis = () => {
   return Redis.fromEnv();
 };
 const key = () => "garda:finance:gate:" + spreadsheetId();
+const rejections = () => createRejections(redis(), "garda:finance:rejected:" + spreadsheetId() + ":");
+export const rejectionStatus = (operationId: string) => rejections().read(operationId);
+export const rejectOperation = (gate: Gate, error: DomainError) => rejections().record(gate, error);
 export async function gateStatus() {
   return await redis().get<Gate>(key());
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { operationStatus } from "../../../lib/pending-command";
 import {
   applyCommand,
   DomainError,
@@ -32,6 +33,8 @@ import {
   release,
   gateStatus,
   limit,
+  rejectionStatus,
+  rejectOperation,
 } from "../../../lib/server/coordinator";
 
 export const runtime = "nodejs";
@@ -162,7 +165,7 @@ export async function GET(request: NextRequest) {
         return new NextResponse(
           JSON.stringify(
             {
-              schema: 1,
+              schema: 2,
               exportedAt: new Date().toISOString(),
               data: loaded.state,
             },
@@ -175,6 +178,7 @@ export async function GET(request: NextRequest) {
               "Content-Disposition":
                 'attachment; filename="garda-keuangan-backup.json"',
               "Cache-Control": "no-store",
+              "X-Backup-Hash": createHash("sha256").update(canonical(loaded.state)).digest("hex"),
             },
           },
         );
@@ -183,6 +187,7 @@ export async function GET(request: NextRequest) {
         state: safeState(loaded.state, loaded.actor),
         actor: loaded.actor,
         initialized: loaded.initialized,
+        schemaReady: loaded.schemaReady,
         dataAsOf: new Date().toISOString(),
         capabilities: capabilities(),
       };
@@ -195,18 +200,21 @@ export async function GET(request: NextRequest) {
       return reply(dataPayload);
     }
     if (route === "operations") {
-      const { state, actor, initialized } = await logged();
+      const { state, actor, initialized, schemaReady } = await logged();
       const gate = capabilities().coordinator ? await gateStatus() : null;
       const id =
         request.nextUrl.searchParams.get("id") ||
         (actor.role === "OWNER" ? gate?.operationId : null);
       const op = state.Operasi.find((o) => o.operation_id === id);
+      const rejected = id && capabilities().coordinator ? await rejectionStatus(id) : null;
       if (op && actor.role !== "OWNER" && op.actor_id !== actor.id)
+        throw new DomainError("Operasi tidak dapat diakses.", "FORBIDDEN", 403);
+      if (rejected && actor.role !== "OWNER" && rejected.actorId !== actor.id)
         throw new DomainError("Operasi tidak dapat diakses.", "FORBIDDEN", 403);
       if (
         gate?.operationId.startsWith("setup-") &&
         actor.role === "OWNER" &&
-        initialized
+        initialized && schemaReady
       ) {
         await release(gate);
         return reply({
@@ -215,13 +223,10 @@ export async function GET(request: NextRequest) {
           pending: null,
         });
       }
-      if (op && gate && gate.operationId === id) await release(gate);
+      if ((op || rejected) && gate && gate.operationId === id) await release(gate);
       return reply({
-        status: op
-          ? "COMMITTED"
-          : gate?.operationId === id
-            ? "VERIFYING"
-            : "NOT_FOUND",
+        status: operationStatus(Boolean(op), id || null, gate?.operationId || null, Boolean(rejected)),
+        error: rejected?.error,
         result: op ? JSON.parse(text(op, "result_json") || "{}") : null,
         pending:
           actor.role === "OWNER" && gate
@@ -277,6 +282,16 @@ export async function POST(request: NextRequest) {
         actor.id,
       );
       try {
+        const snapshot = await readState();
+        const setupActor = authorize(who, snapshot.state);
+        if (setupActor.role !== "OWNER") {
+          await release(gate);
+          throw new DomainError("Setup hanya untuk pemilik.", "FORBIDDEN", 403);
+        }
+        if (snapshot.initialized && body.backupHash !== createHash("sha256").update(canonical(snapshot.state)).digest("hex")) {
+          await release(gate);
+          throw new DomainError("Unduh cadangan terbaru sebelum memperbarui struktur spreadsheet. Data mungkin berubah sejak cadangan terakhir.", "BACKUP_REQUIRED", 409);
+        }
         const result = await setupSheets();
         await release(gate);
         return reply({ added: result.added, initialized: true });
@@ -303,7 +318,7 @@ export async function POST(request: NextRequest) {
       (o) => o.operation_id === command.operationId,
     );
     if (existing) {
-      if (existing.request_hash !== hash)
+      if (existing.request_hash !== hash || existing.actor_id !== actor.id)
         throw new DomainError(
           "Operation ID sudah dipakai dengan isi berbeda.",
           "OPERATION_CONFLICT",
@@ -321,21 +336,30 @@ export async function POST(request: NextRequest) {
         "NOT_INITIALIZED",
         409,
       );
+    if (!before.schemaReady) throw new DomainError("Struktur laporan perlu diperbarui ke versi 2. Unduh cadangan dan jalankan pembaruan spreadsheet terlebih dahulu.", "MIGRATION_REQUIRED", 409);
     const gate = await acquire(command.operationId, hash, actor.id);
-    let writing = false;
+    let writing = false, committed = false;
     try {
       const latest = await readState();
       const currentActor = authorize(who, latest.state);
+      const rejected = await rejectionStatus(command.operationId);
+      if (rejected) {
+        if (rejected.hash !== hash || rejected.actorId !== currentActor.id)
+          throw new DomainError("Operation ID sudah dipakai untuk isi atau akun berbeda.", "OPERATION_CONFLICT", 409);
+        await release(gate);
+        return reply({ error: rejected.error, code: rejected.code, operationId: command.operationId, rejected: true }, rejected.status);
+      }
       const duplicate = latest.state.Operasi.find(
         (o) => o.operation_id === command.operationId,
       );
       if (duplicate) {
-        if (duplicate.request_hash !== hash)
+        if (duplicate.request_hash !== hash || duplicate.actor_id !== currentActor.id)
           throw new DomainError(
             "Operation ID sudah dipakai dengan isi berbeda.",
             "OPERATION_CONFLICT",
             409,
           );
+        committed = true;
         await release(gate);
         return reply({
           operationId: command.operationId,
@@ -347,6 +371,7 @@ export async function POST(request: NextRequest) {
       result.state.Operasi.at(-1)!.request_hash = hash;
       writing = true;
       await commitState(latest.state, result.state);
+      committed = true;
       await release(gate);
       return reply({
         operationId: command.operationId,
@@ -354,6 +379,13 @@ export async function POST(request: NextRequest) {
         committed: true,
       });
     } catch (error) {
+      if (committed) return reply({ error: "Hasil simpan sedang diverifikasi. Jangan mengulangi dengan transaksi baru.", code: "WRITE_UNCERTAIN", operationId: command.operationId }, 202);
+      if (error instanceof DomainError && error.code !== "OPERATION_CONFLICT") {
+        // A terminal decision also rejects any older delayed copy of this ID.
+        await rejectOperation(gate, error);
+        await release(gate);
+        return reply({ error: error.message, code: error.code, rejected: true, operationId: command.operationId }, error.status);
+      }
       if (
         !writing ||
         error instanceof DomainError ||
