@@ -13,7 +13,9 @@
 .report-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:18px 0 22px}
 .report-controls .field{margin:0;flex:0 1 180px;min-width:135px}
 .report-controls .field input,.report-controls .field select{width:100%;min-height:44px;padding:10px 12px;font-size:12px;box-sizing:border-box}
-.report-export{display:flex;gap:9px;margin-left:auto;flex-shrink:0}
+.report-export{display:flex;flex-wrap:wrap;gap:9px;margin-left:auto;max-width:100%}
+.report-download-hint{font-size:11px;line-height:1.7;color:var(--muted);margin:-9px 0 18px}
+.report-generate[aria-busy=true]{cursor:progress}
 .report-document{padding:30px 32px;min-width:0}
 .report-document-heading{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;padding-bottom:23px;border-bottom:1px solid var(--line)}
 .report-document-heading h2{font-size:25px;margin:10px 0 9px;letter-spacing:-.8px}
@@ -107,6 +109,7 @@ button.statement-line:hover{color:var(--primary);background:var(--surface-soft)}
   .reports-intro h2{font-size:23px}.reports-intro>.btn{width:100%;justify-content:center}
   .report-controls .field{flex:1 1 135px}.report-controls .field input,.report-controls .field select{font-size:16px}
   .report-export{width:100%;margin:3px 0 0}.report-export .btn{flex:1;justify-content:center}
+  .report-export .report-generate{flex:1 0 100%}
   .report-document{padding:20px 16px}.report-document-heading{flex-direction:column;gap:14px}
   .report-document-heading h2{font-size:22px}.report-document-heading p{font-size:11px}
   .report-metrics{grid-template-columns:1fr 1fr;gap:21px 13px}.report-metrics strong{font-size:18px}

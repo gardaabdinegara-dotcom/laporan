@@ -713,7 +713,7 @@ Dokumen dipakai sebagai contoh format dan struktur laporan. Nominal, nama siswa,
 | REP-04 | Aset dan penyusutan | Daftar aset, tanggal perolehan dan mulai penyusutan, biaya perolehan, umur manfaat, nilai residu, saldo penyusutan awal, penyusutan bulanan/tahunan, akumulasi, dan nilai buku |
 | REP-05 | Rekap omzet dan pajak | Omzet per bulan dan total tahun, dasar omzet yang digunakan, konfigurasi tarif beserta periode berlakunya, hasil perhitungan, dan pembayaran yang ditautkan ke periode pajaknya |
 | REP-06 | Pemeriksaan antar laporan | Pemeriksaan saldo kas, total pendapatan/biaya, penyusutan, aset, dan keseimbangan neraca; selisih dapat dibuka sampai ke sumber data dan tidak menghasilkan penyesuaian otomatis |
-| REP-07 | Ekspor dan cetak | Pilihan bulan/tahun atau tanggal sesuai jenis laporan, CSV rincian, serta tampilan cetak/PDF dengan identitas perusahaan, periode, tanggal terbit, lokasi, dan nama/jabatan penandatangan |
+| REP-07 | Ekspor dan cetak | Pilihan bulan/tahun atau tanggal sesuai jenis laporan, tombol Generate Laporan untuk unduh PDF langsung, CSV rincian, serta cetak dengan identitas perusahaan, periode, tanggal terbit, lokasi, dan nama/jabatan penandatangan |
 
 Laporan aset yang lebar memakai cetak landscape dengan header tabel berulang. Cetak laporan memakai palet terang, pemisah halaman yang jelas, dan total yang mudah dibaca. Antarmuka mengikuti Terrace, mode terang/gelap, dan navigasi desktop/ponsel pada bagian 20.
 
@@ -771,3 +771,26 @@ Contoh PDF dapat digunakan sebagai bahan uji terisolasi setelah masalah sumber d
 - Pemetaan dan tarif berversi menurut bulan berlaku. Model omzet pajak dapat berupa penerimaan jasa bruto atau pendapatan jasa setelah penyesuaian. Pembayaran dapat ditautkan ke tahun/bulan kewajiban dan dipilih sebagai beban atau pelunasan utang.
 - Laporan yang belum lengkap berstatus Draf. Periode yang belum berakhir ditandai proyeksi. CSV memuat periode, status, dan sumber; VIEWER mendapat ringkasan. Cetak putih memakai header tabel berulang, nomor halaman, dan ruang tanda tangan; daftar aset memakai landscape.
 - Contoh 2025 menjadi fixture pengujian terisolasi, termasuk selisih sumber Rp800.000. Tidak ada impor otomatis ke spreadsheet operasional.
+
+## 23. Unduh PDF langsung - 21 Oktober 2026
+
+Pengguna meminta tombol **Generate Laporan** yang mengunduh PDF sesuai jenis dan
+periode terpilih, mengikuti contoh laporan. Tombol tersedia pada enam laporan
+terstruktur, dengan filter rekening untuk Buku kas. Cetak browser dan CSV tetap
+tersedia sebagai tindakan terpisah. Rentang tidak sah menonaktifkan ekspor.
+
+PDF mengambil snapshot dari data yang sedang ditampilkan, dengan hak akses yang
+sama seperti ekspor CSV. Identitas usaha, periode, waktu data, status, catatan,
+total, nomor halaman, serta lokasi/nama/jabatan penandatangan ikut tercantum.
+Data yang belum lengkap tetap Draf; proyeksi dan data contoh tidak diubah menjadi
+laporan final. Tidak ada mutasi transaksi atau impor contoh selama ekspor.
+
+Buku kas disusun per bulan dengan saldo berjalan. Laba rugi memakai kelompok
+pendapatan/biaya dan subtotal. Neraca memakai dua sisi. Daftar aset beserta
+lampiran jadwal penyusutan memakai landscape; jadwal dibagi per semester agar
+nominal terbaca. Pajak mempertahankan pemisahan periode kewajiban dan tanggal
+bayar. Header tabel berulang dan tanda tangan tidak terpotong antar halaman.
+
+PDF dibuat lokal di browser dengan font yang disertakan aplikasi, tanpa layanan
+PDF eksternal. Antarmuka tetap Terrace light/dark pada desktop dan ponsel;
+dokumen unduhan memakai halaman putih.

@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "24.x" },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3012",
     "build": "next build",
@@ -21,6 +23,8 @@
   "dependencies": {
     "@upstash/redis": "1.39.0",
     "google-auth-library": "11.3.0",
+    "jspdf": "4.2.1",
+    "jspdf-autotable": "5.0.9",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

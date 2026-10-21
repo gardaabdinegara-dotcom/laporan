@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import Icon from "./icon";
 import { dateLabel, endOfMonth, money, num, setting, text, today, type Actor, type Row, type State } from "../lib/domain";
 import { CREDIT_ACCOUNTS, EXPENSE_ACCOUNTS, JOURNAL_ACCOUNTS, MAPPING_ACCOUNTS, OPENING_ACCOUNTS, REPORT_ACCOUNTS, assetPeriodExpense, cashbook, financialStatements, mappingAt, openingDerived, openingRows, reportCSV, reportSetting, reportingAnchor, taxReport, type ReportAccount } from "../lib/reporting";
+import { buildReportDocument, validReportRange } from "../lib/report-document";
 
 type Kind = "cash" | "profit" | "balance" | "assets" | "tax" | "checks" | "overview";
 type Manage = "profile" | "mapping" | "opening" | "asset" | "journal" | "tax" | "payment";
@@ -26,17 +27,20 @@ export default function FinancialReports({ data, actor, month, canWrite, busy, s
   const [customFrom, setCustomFrom] = useState(month + "-01"), [customTo, setCustomTo] = useState(endOfMonth(month));
   const [accountId, setAccountId] = useState(""), [manager, setManager] = useState<Manage | null>(null), [notice, setNotice] = useState("");
   const [formError, setFormError] = useState(""), [saving, setSaving] = useState(false), [editingAsset, setEditingAsset] = useState<Row | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false), [pdfError, setPdfError] = useState("");
   const [assetSource, setAssetSource] = useState("TRANSAKSI"), [assetTransaction, setAssetTransaction] = useState("");
   const [openingInput, setOpeningInput] = useState<Record<string, string>>({});
   const [journalLines, setJournalLines] = useState([{ account: "PIUTANG", debit: "", credit: "" }, { account: "PENDAPATAN", debit: "", credit: "" }]);
   const [detailAccount, setDetailAccount] = useState<ReportAccount | null>(null);
   const submitting = useRef(false), manageRef = useRef<HTMLDivElement>(null);
   const printCleanup = useRef<(() => void) | null>(null);
+  const pdfInFlight = useRef(false);
   useEffect(() => { setSelectedMonth(month); setYear(month.slice(0, 4)); }, [month]);
+  useEffect(() => { setNotice(""); setPdfError(""); }, [kind, period, selectedMonth, year, customFrom, customTo, accountId]);
   useEffect(() => () => { printCleanup.current?.(); }, []);
   const from = period === "year" ? year + "-01-01" : period === "custom" ? customFrom : selectedMonth + "-01";
   const to = period === "year" ? year + "-12-31" : period === "custom" ? customTo : endOfMonth(selectedMonth);
-  const validRange = /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to) && Number.isFinite(Date.parse(from)) && Number.isFinite(Date.parse(to)) && from <= to && Number(to.slice(0, 4)) - Number(from.slice(0, 4)) <= 9;
+  const validRange = validReportRange(from, to);
   const safeFrom = validRange ? from : selectedMonth + "-01", safeTo = validRange ? to : endOfMonth(selectedMonth);
   const report = useMemo(() => financialStatements(data, safeFrom, safeTo), [data, safeFrom, safeTo]);
   const book = useMemo(() => cashbook(data, safeFrom, safeTo, accountId), [data, safeFrom, safeTo, accountId]);
@@ -110,6 +114,26 @@ export default function FinancialReports({ data, actor, month, canWrite, busy, s
     window.addEventListener("afterprint", cleanup);
     try { window.print(); } catch { cleanup(); setNotice("Buka menu cetak browser untuk menyimpan laporan sebagai PDF."); }
   }
+  async function generatePdf() {
+    if (!validRange || kind === "overview" || pdfInFlight.current) return;
+    pdfInFlight.current = true; setGeneratingPdf(true); setPdfError(""); setNotice("");
+    try {
+      // Capture the requested data and selection before loading the PDF renderer.
+      const documentSnapshot = buildReportDocument(data, { kind, from, to, accountId, role: actor.role, simulation, dataAsOf });
+      const { loadReportFonts, renderReportPdf } = await import("../lib/report-pdf");
+      const bytes = renderReportPdf(documentSnapshot, await loadReportFonts());
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url; link.download = documentSnapshot.filename;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setNotice("PDF " + documentSnapshot.title + " siap diunduh: " + documentSnapshot.filename);
+    } catch (error) {
+      setPdfError(error instanceof Error ? error.message : "PDF belum dapat dibuat. Coba lagi.");
+    } finally {
+      pdfInFlight.current = false; setGeneratingPdf(false);
+    }
+  }
   function line(account: ReportAccount, amount = report.period[account], total = false) {
     return <button type="button" className={"statement-line" + (total ? " statement-total" : "")} key={account} onClick={() => setDetailAccount(account)} title="Lihat mutasi pembentuk angka"><span>{REPORT_ACCOUNTS[account]}</span><strong>{money(amount)}</strong></button>;
   }
@@ -130,9 +154,15 @@ export default function FinancialReports({ data, actor, month, canWrite, busy, s
       {period === "year" && <Field label="Tahun"><input aria-label="Tahun laporan" type="number" min="1900" max="9998" value={year} onChange={e => setYear(e.target.value)} /></Field>}
       {period === "custom" && <><Field label="Dari"><input aria-label="Awal periode laporan" type="date" value={customFrom} onInput={e => setCustomFrom(e.currentTarget.value)} onChange={e => setCustomFrom(e.target.value)} /></Field><Field label="Sampai"><input aria-label="Akhir periode laporan" type="date" value={customTo} onInput={e => setCustomTo(e.currentTarget.value)} onChange={e => setCustomTo(e.target.value)} /></Field></>}
       {kind === "cash" && <Field label="Kas / rekening"><select aria-label="Akun buku kas" value={accountId} onChange={e => setAccountId(e.target.value)}><option value="">Semua kas & bank</option>{data.Akun.map(a => <option key={text(a, "akun_id")} value={text(a, "akun_id")}>{text(a, "nama_akun")}</option>)}</select></Field>}
-      <div className="report-export"><button className="btn" disabled={!validRange} onClick={exportReport}><Icon name="download" />CSV</button><button className="btn" disabled={!validRange} onClick={printReport}><Icon name="print" />Cetak / PDF</button></div>
+      <div className="report-export">
+        <button className="btn primary report-generate" disabled={!validRange || generatingPdf} aria-busy={generatingPdf} onClick={() => void generatePdf()}><Icon name="download" />{generatingPdf ? "Menyiapkan PDF…" : "Generate Laporan"}</button>
+        <button className="btn" disabled={!validRange} onClick={exportReport}>CSV</button>
+        <button className="btn" disabled={!validRange} onClick={printReport}><Icon name="print" />Cetak</button>
+      </div>
     </div>}
+    {kind !== "overview" && <p className="report-download-hint no-report-print">Generate Laporan mengunduh PDF sesuai jenis, periode, dan akun yang dipilih.</p>}
     {!validRange && <p role="alert" className="form-error">Pilih rentang tanggal yang valid, maksimum 10 tahun.</p>}
+    {pdfError && <p role="alert" className="form-error no-report-print">{pdfError}</p>}
     {notice && <p role="status" className="report-notice no-report-print">{notice}</p>}
     {manager && owner && <div className="report-manager no-report-print panel" ref={manageRef}>
       <div className="report-manager-heading"><div><span className="reports-kicker">PENGATURAN LAPORAN</span><h2>Lengkapi dasar angkanya.</h2></div><button className="btn" onClick={() => { setManager(null); setFormError(""); }} disabled={saving}>Tutup</button></div>

@@ -64,3 +64,38 @@ Verifikasi lokal:
 - Bukti browser tersimpan di preview-laporan-2026-10-21, dengan gambar terang/gelap, ponsel, dan qa-browser.json.
 
 Dialog cetak dan hasil PDF multi halaman tidak diotomatisasi pada sesi ini; stylesheet cetak dan orientasi landscape telah ditambahkan. OAuth/Redis produksi, migrasi spreadsheet operasional, dan penyimpanan nyata tetap memerlukan verifikasi pada lingkungan yang dituju. Tidak ada deployment, perubahan skema, atau transaksi pada spreadsheet operasional selama pengerjaan pembaruan ini. Perubahan lewat browser hanya memakai ruang Data contoh.
+
+## Generate Laporan PDF - 21 Oktober 2026
+
+Tombol **Generate Laporan** langsung mengunduh PDF untuk Buku kas, Laba rugi,
+Neraca, Aset & penyusutan, Omzet & pajak, serta Pemeriksaan. Jenis, periode,
+rekening, identitas usaha, waktu data, status, dan hak akses mengikuti snapshot
+ketika tombol ditekan. CSV serta Cetak browser tetap tersedia.
+
+Format mengikuti struktur contoh: buku kas per bulan, laba rugi berkelompok,
+neraca dua sisi, daftar aset/jadwal penyusutan, dan rekap omzet/pajak. Tabel
+berulang saat berganti halaman, nilai negatif memakai tanda kurung, nomor
+halaman menunjukkan total halaman, dan tanda tangan tetap utuh. PDF berwarna
+putih dengan aksen Terrace. Font lokal tertanam, tanpa layanan PDF eksternal.
+
+Verifikasi lokal tambahan:
+
+- TypeScript dan **72 pengujian otomatis** lulus. Sepuluh pengujian baru memeriksa
+  snapshot/filter, saldo bergulir, total neraca, pembatasan VIEWER, tanggal sah,
+  Draf/Proyeksi, jadwal tahunan, renderer PDF, serta percobaan ulang font gagal.
+- Build produksi Next.js berhasil.
+- Unduhan melalui browser berhasil untuk enam jenis laporan, ditambah rekap
+  pajak tahunan. Isi PDF laba rugi/neraca sesuai rentang 1-20 Oktober dan buku kas
+  hanya memuat rekening bank yang dipilih. Rentang terbalik menonaktifkan tombol.
+- Pemeriksaan struktur/teks pada **14 PDF** (fixture dan unduhan browser)
+  memastikan nomor halaman, sumber Data contoh, dan batas margin. Buku kas
+  panjang **21 halaman** mempertahankan seluruh 180 baris tambahan.
+- Delapan kombinasi light/dark dan lebar 320/390/768/1280 px tidak meluber secara
+  horizontal. Tindakan utama memenuhi lebar baris pada ponsel.
+- PDF terakhir dirender dan diperiksa secara visual, termasuk neraca satu halaman,
+  lampiran aset, tabel panjang, dan catatan Draf lintas halaman. Bukti antarmuka
+  ada pada preview-generate-pdf-2026-10-21; satu contoh unduhan ada di output/pdf.
+
+Pemeriksaan ini menggunakan data contoh dan fixture terisolasi. Tidak ada
+deployment, migrasi Sheets operasional, atau transaksi keuangan nyata. PDF
+unduhan langsung telah diuji; dialog Cetak browser tetap merupakan fitur terpisah.

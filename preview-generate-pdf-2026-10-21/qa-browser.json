@@ -1,0 +1,114 @@
+{
+  "downloads": [
+    {
+      "kind": "profit-custom",
+      "path": "E:\\Downloads\\garda-laba-rugi-2026-10-01_2026-10-20.pdf"
+    },
+    {
+      "kind": "Neraca",
+      "path": "E:\\Downloads\\garda-neraca-2026-10-01_2026-10-20.pdf"
+    },
+    {
+      "kind": "Aset & penyusutan",
+      "path": "E:\\Downloads\\garda-aset-penyusutan-2026-10-01_2026-10-20.pdf"
+    },
+    {
+      "kind": "Omzet & pajak",
+      "path": "E:\\Downloads\\garda-omzet-pajak-2026-10-01_2026-10-20.pdf"
+    },
+    {
+      "kind": "Pemeriksaan",
+      "path": "E:\\Downloads\\garda-pemeriksaan-2026-10-01_2026-10-20.pdf"
+    },
+    {
+      "kind": "tax-year",
+      "path": "E:\\Downloads\\garda-omzet-pajak-2026-01-01_2026-12-31.pdf"
+    },
+    {
+      "kind": "cash-bank-month",
+      "path": "E:\\Downloads\\garda-buku-kas-2026-10-01_2026-10-31-rekening-bank.pdf"
+    }
+  ],
+  "controls": [
+    {
+      "theme": "light",
+      "width": 320,
+      "buttonHeight": 44,
+      "buttonLeft": 14,
+      "buttonRight": 291,
+      "buttonWidth": 277,
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "buttonHeight": 44,
+      "buttonLeft": 18,
+      "buttonRight": 357,
+      "buttonWidth": 339,
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "buttonHeight": 44,
+      "buttonLeft": 422.3515625,
+      "buttonRight": 573.1171875,
+      "buttonWidth": 150.765625,
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "theme": "light",
+      "width": 1280,
+      "buttonHeight": 42,
+      "buttonLeft": 879.328125,
+      "buttonRight": 1042.7109375,
+      "buttonWidth": 163.3828125,
+      "page": 1265,
+      "viewport": 1280
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "buttonHeight": 44,
+      "buttonLeft": 14,
+      "buttonRight": 291,
+      "buttonWidth": 277,
+      "page": 305,
+      "viewport": 320
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "buttonHeight": 44,
+      "buttonLeft": 18,
+      "buttonRight": 357,
+      "buttonWidth": 339,
+      "page": 375,
+      "viewport": 390
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "buttonHeight": 44,
+      "buttonLeft": 422.3515625,
+      "buttonRight": 573.1171875,
+      "buttonWidth": 150.765625,
+      "page": 753,
+      "viewport": 768
+    },
+    {
+      "theme": "dark",
+      "width": 1280,
+      "buttonHeight": 42,
+      "buttonLeft": 879.328125,
+      "buttonRight": 1042.7109375,
+      "buttonWidth": 163.3828125,
+      "page": 1265,
+      "viewport": 1280
+    }
+  ]
+}

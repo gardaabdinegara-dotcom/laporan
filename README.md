@@ -66,6 +66,8 @@ app/                     Halaman, stylesheet, dan API server
 components/              Antarmuka Terrace yang responsif
 lib/domain.ts            Aturan keuangan dan data contoh
 lib/reporting.ts         Perhitungan laporan, aset, pajak, dan ekspor CSV
+lib/report-document.ts   Snapshot laporan PDF sesuai jenis/periode/hak akses
+lib/report-pdf.ts        Renderer PDF dengan font lokal dan paginasi tabel
 lib/report-commands.ts   Validasi dan perintah pencatatan laporan
 lib/server/              Login, Google Sheets, dan koordinator penulisan
 scripts/                 Pemeriksaan environment dan pemeliharaan Sheets
@@ -87,9 +89,23 @@ Dashboard memakai basis kas. Laporan laba rugi dan neraca memakai dasar **kas de
 4. Pada **Saldo awal**, periksa kas/aset terhitung dan isi saldo modal, utang, serta saldo nonkas lainnya berdasarkan bukti. Pembukaan harus seimbang; selisih tidak menjadi modal/laba ditahan otomatis.
 5. **Jurnal nonkas** mencatat penyesuaian pendapatan, piutang, uang muka, dan kewajiban. Debit harus sama dengan kredit. Koreksi melalui pembalik dengan tanggal efektif dan alasan.
 6. Untuk rekap pajak, tetapkan **Dasar omzet pajak** dan versi **Tarif pajak** sesuai kondisi usaha. **Pembayaran pajak** menautkan transaksi biaya ke tahun/bulan kewajiban; pelunasan utang tidak menambah beban kedua.
-7. Pilih laporan dan periode bulanan/tahunan/rentang tanggal. Gunakan **Pemeriksaan** untuk menelusuri selisih, lalu CSV atau Cetak / PDF. VIEWER mendapat CSV ringkasan; rincian sumber tersedia bagi OWNER/ADMIN.
+7. Pilih laporan dan periode bulanan/tahunan/rentang tanggal. Untuk Buku kas, pilih gabungan akun atau satu rekening. Tekan **Generate Laporan** untuk langsung mengunduh PDF; **CSV** mengunduh data tabel dan **Cetak** membuka dialog cetak browser. Gunakan **Pemeriksaan** untuk menelusuri selisih. VIEWER mendapat ringkasan kas/pajak tanpa rincian transaksi pada PDF dan CSV.
 
 Data yang belum mempunyai dasar, pemetaan, pembukaan, atau tarif yang diperlukan diberi status **Draf**. Rentang yang berakhir setelah hari ini diberi penanda proyeksi. Cetak memakai palet putih; tabel aset memakai kertas landscape, header berulang, nomor halaman, dan ruang tanda tangan. Pilihan mode terang/gelap tetap berlaku pada seluruh formulir.
+
+**Generate Laporan** tersedia untuk Buku kas, Laba rugi, Neraca, Aset & penyusutan,
+Omzet & pajak, serta Pemeriksaan. Nama PDF memuat jenis, tanggal awal/akhir, dan
+rekening bila dipilih. Isi diambil dari snapshot data saat tombol ditekan, dengan
+waktu data dan status Draf/Proyeksi/Data contoh yang tetap tercantum. Buku kas
+tahunan dikelompokkan per bulan; saldo awal/akhir tetap bergulir. Neraca memakai
+dua sisi pada A4 landscape. Jadwal aset menjadi lampiran landscape dengan dua
+tabel semester agar nominal terbaca.
+
+PDF dihasilkan di browser menggunakan jsPDF dan AutoTable yang dimuat saat
+diperlukan. Font OFL ikut disertakan dari folder lokal; data tidak dikirim ke
+layanan PDF eksternal. File PDF tetap memakai halaman putih, identitas usaha,
+periode, tabel berulang saat berganti halaman, nomor halaman, catatan pemeriksaan,
+dan ruang tanda tangan. Tidak memerlukan pengaturan layanan PDF di server.
 
 Angka dari PDF contoh hanya dipakai pada fixture pengujian terisolasi. Contoh itu menghasilkan saldo akhir buku kas Rp14.940.000, berbeda Rp800.000 dari neraca contoh; aplikasi tidak mengimpor atau menyeimbangkan selisih tersebut otomatis.
 
