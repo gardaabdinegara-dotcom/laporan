@@ -155,3 +155,17 @@ memakai palet putih dengan aksen hijau.
 Laporan → Cocokkan saldo / tutup bulan menyediakan pemeriksaan saldo nyata tiap akun pada akhir bulan. Simpan pencocokan untuk mencatat selisih, atau pilih Tutup periode setelah semua saldo cocok. Hasil pemeriksaan tampil pada laporan bulan terkait. Data baru setelah pemeriksaan memunculkan permintaan mencocokkan ulang. Aplikasi tidak membuat transaksi penyesuaian otomatis.
 
 Jika respons simpan terputus, tekan Periksa status. Ketika gerbang kosong dan permintaan asli tersedia pada tab yang sama, Kirim ulang permintaan yang sama mempertahankan ID dan payload. Data permintaan sementara disimpan di sessionStorage, terikat akun, serta dihapus setelah berhasil atau logout. Tutup tab setelah hasilnya jelas.
+
+## Logo Garda dari pengguna - 24 Oktober 2026
+
+Lambang elang yang diberikan pengguna menggantikan ikon G sementara pada header,
+sidebar, kuitansi, favicon, dan ikon Apple touch. Logo juga tampil pada sampul
+dan header PDF, termasuk hasil Generate Semua Laporan. Warna logo tetap penuh
+pada Terrace light/dark; area di luar lingkaran transparan.
+
+Paket master ada pada `brand/garda-resmi-hd-v1`: JPEG sumber, hasil rekonstruksi
+imagegen 1254 px, ekspor PNG 2048 px, prompt final, dan metadata aset. Detail
+yang kabur direkonstruksi dengan AI; ukuran 2048 px merupakan ekspor yang
+diperbesar dari hasil native. Aplikasi memuat WebP 192 px sekitar 20 KB;
+PDF memuat PNG 256 px satu kali dan menggunakannya ulang pada setiap halaman.
+Aset versi baru ada di `public/brand`. SVG lama serta berkas asli dipertahankan.

@@ -632,7 +632,7 @@ export default function FinanceApp() {
   function Brand() {
     return (
       <div className="terrace-wordmark" aria-label="Garda Abdi Negara">
-        <img src="/favicon.svg" width="35" height="35" alt="" />
+        <img src="/brand/garda-logo-192-v1.webp" width="48" height="48" alt="" decoding="async" />
         <span>garda<i>.</i><small>ABDI NEGARA</small></span>
       </div>
     );

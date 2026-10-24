@@ -5,7 +5,11 @@ import "./reports.css";
 export const metadata: Metadata = {
   title: "Keuangan — Garda Abdi Negara",
   description: "Dashboard keuangan bimbingan belajar Garda Abdi Negara.",
-  icons: { icon: "/favicon.svg" },
+  icons: {
+    icon: { url: "/brand/garda-icon-96-v1.png", type: "image/png", sizes: "96x96" },
+    shortcut: "/brand/garda-favicon-v1.ico",
+    apple: { url: "/brand/garda-apple-touch-v1.png", sizes: "180x180", type: "image/png" },
+  },
   robots: { index: false, follow: false },
 };
 export const viewport: Viewport = {

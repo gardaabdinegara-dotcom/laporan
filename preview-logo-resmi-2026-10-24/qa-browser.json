@@ -1,0 +1,151 @@
+{
+  "annualPdf": "E:\\Downloads\\garda-semua-laporan-2025 (4).pdf",
+  "singlePdf": "E:\\Downloads\\garda-laba-rugi-2025-01-01_2025-12-31 (1).pdf",
+  "responsive": [
+    {
+      "logo": [
+        {
+          "height": 44,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 44
+        }
+      ],
+      "mode": "dark",
+      "scrollWidth": 305,
+      "width": 320
+    },
+    {
+      "logo": [
+        {
+          "height": 44,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 44
+        }
+      ],
+      "mode": "dark",
+      "scrollWidth": 375,
+      "width": 390
+    },
+    {
+      "logo": [
+        {
+          "height": 48,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 48
+        }
+      ],
+      "mode": "dark",
+      "scrollWidth": 753,
+      "width": 768
+    },
+    {
+      "logo": [
+        {
+          "height": 48,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 48
+        }
+      ],
+      "mode": "dark",
+      "scrollWidth": 1009,
+      "width": 1024
+    },
+    {
+      "logo": [
+        {
+          "height": 48,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 48
+        }
+      ],
+      "mode": "dark",
+      "scrollWidth": 1265,
+      "width": 1280
+    },
+    {
+      "logo": [
+        {
+          "height": 44,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 44
+        }
+      ],
+      "mode": "light",
+      "scrollWidth": 305,
+      "width": 320
+    },
+    {
+      "logo": [
+        {
+          "height": 44,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 44
+        }
+      ],
+      "mode": "light",
+      "scrollWidth": 375,
+      "width": 390
+    },
+    {
+      "logo": [
+        {
+          "height": 48,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 48
+        }
+      ],
+      "mode": "light",
+      "scrollWidth": 753,
+      "width": 768
+    },
+    {
+      "logo": [
+        {
+          "height": 48,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 48
+        }
+      ],
+      "mode": "light",
+      "scrollWidth": 1009,
+      "width": 1024
+    },
+    {
+      "logo": [
+        {
+          "height": 48,
+          "loaded": true,
+          "src": "/brand/garda-logo-192-v1.webp",
+          "width": 48
+        }
+      ],
+      "mode": "light",
+      "scrollWidth": 1265,
+      "width": 1280
+    }
+  ],
+  "icons": [
+    {
+      "rel": "shortcut icon",
+      "url": "/brand/garda-favicon-v1.ico"
+    },
+    {
+      "rel": "icon",
+      "url": "/brand/garda-icon-96-v1.png"
+    },
+    {
+      "rel": "apple-touch-icon",
+      "url": "/brand/garda-apple-touch-v1.png"
+    }
+  ],
+  "logs": []
+}

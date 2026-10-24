@@ -10,6 +10,7 @@ const options: AnnualReportOptions = { year: "2025", role: "OWNER", simulation: 
 const fonts = {
   regular: new Uint8Array(readFileSync(new URL("../public/fonts/terrace-report-regular.ttf", import.meta.url))),
   bold: new Uint8Array(readFileSync(new URL("../public/fonts/terrace-report-bold.ttf", import.meta.url))),
+  logo: new Uint8Array(readFileSync(new URL("../public/brand/garda-report-logo-v1.png", import.meta.url))),
 };
 
 test("paket satu tahun menyatukan enam laporan dari snapshot yang tidak mengubah data", () => {

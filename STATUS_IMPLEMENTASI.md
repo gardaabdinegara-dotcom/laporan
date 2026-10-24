@@ -178,3 +178,37 @@ Verifikasi lokal:
 Contoh hasil langsung: output/pdf/Simulasi-Semua-Laporan-Garda-2025.pdf.
 Bukti antarmuka dan ringkasan QA: preview-generate-semua-2026-10-21.
 Pembaruan ini belum dideploy dan tidak menulis data spreadsheet operasional.
+
+## Logo resmi pengguna dan versi HD - 24 Oktober 2026
+
+JPEG dari pengguna direkonstruksi memakai built-in imagegen. Elang, bintang,
+api, padi, kapas, cincin magenta/emas, dan tulisan Garda Abdi Negara dipertahankan
+sebagai elemen utama. Detail kabur ditafsirkan ulang oleh AI. PNG native
+1254 x 1254 px disimpan, lalu diekspor ke PNG 2048 x 2048 px dengan ruang
+transparan di luar lingkaran. Sumber asli disalin dengan checksum yang sama.
+
+Logo digunakan pada header/sidebar/kuitansi, favicon PNG/ICO, Apple touch icon,
+sampul laporan tahunan, dan header semua halaman PDF. Versi web sekitar 20 KB;
+PDF memakai satu objek gambar yang dibagikan antar halaman. Aset sementara lama
+tetap tersedia untuk riwayat, sedangkan referensi aplikasi memakai nama versi baru.
+
+Verifikasi lokal:
+
+- TypeScript dan **86 pengujian otomatis** lulus. Fixture renderer kini memakai
+  PNG logo asli yang sama dengan aplikasi; percobaan ulang aset gagal diuji.
+- Build produksi berhasil setelah perintah diulang. Next.js 16.4.0 menampilkan
+  peringatan keamanan dependensi, yang sempat menghentikan perintah pertama.
+  Peningkatan versi framework belum dilakukan dalam tugas logo ini.
+- Logo termuat, berbentuk persegi tanpa distorsi, dan tidak menyebabkan overflow
+  pada sepuluh kombinasi light/dark dengan lebar 320/390/768/1024/1280 px.
+- Metadata ikon menunjuk PNG/ICO/Apple touch baru. Kuitansi ditinjau di browser.
+- PDF tahunan dan laba rugi satuan diunduh melalui tombol aplikasi. Paket tetap
+  **24 halaman**, tujuh tautan daftar isi benar, 178 referensi kas lengkap,
+  satu objek logo digunakan pada seluruh 24 halaman, dan nomor halaman tetap
+  berurutan. PDF laba rugi tetap satu halaman. Batas margin teks diperiksa.
+- Sampul, grafik, dan halaman laporan dengan logo dirender dan ditinjau visual.
+
+Master, prompt, dan metadata: brand/garda-resmi-hd-v1.
+Bukti antarmuka dan QA: preview-logo-resmi-2026-10-24.
+Contoh PDF: output/pdf/Contoh-Laporan-Garda-Logo-HD-2026-10-24.pdf.
+Penerapan hanya pada aplikasi keuangan lokal; belum ada deployment.

@@ -99,6 +99,7 @@ test("renderer membuat PDF sungguhan dengan font tertanam untuk enam jenis dan t
   const fonts = {
     regular: new Uint8Array(readFileSync(new URL("../public/fonts/terrace-report-regular.ttf", import.meta.url))),
     bold: new Uint8Array(readFileSync(new URL("../public/fonts/terrace-report-bold.ttf", import.meta.url))),
+    logo: new Uint8Array(readFileSync(new URL("../public/brand/garda-report-logo-v1.png", import.meta.url))),
   };
   const outputDir = process.env.PDF_QA_DIR;
   if (outputDir) mkdirSync(outputDir, { recursive: true });
@@ -124,6 +125,6 @@ test("font PDF yang gagal dimuat dapat dicoba ulang tanpa menahan unduhan beriku
     await assert.rejects(loadReportFonts(), /Periksa koneksi/);
     globalThis.fetch = async () => new Response(new Uint8Array([0, 1, 2, 3]));
     const loaded = await loadReportFonts();
-    assert.equal(loaded.regular.length, 4); assert.equal(loaded.bold.length, 4);
+    assert.equal(loaded.regular.length, 4); assert.equal(loaded.bold.length, 4); assert.equal(loaded.logo?.length, 4);
   } finally { globalThis.fetch = originalFetch; }
 });

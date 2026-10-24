@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import { autoTable, type Styles, type Table } from "jspdf-autotable";
 import type { ReportDocument, PdfTable } from "./report-document.ts";
 
-export type PdfFonts = { regular: Uint8Array; bold: Uint8Array };
+export type PdfFonts = { regular: Uint8Array; bold: Uint8Array; logo?: Uint8Array };
 const ink = "#172B25", muted = "#54645D", green = "#295445", line = "#D8DFDA";
 const clean = (value: string) => value.replace(/[\u2010-\u2015\u2212]/g, "-").replace(/\u00a0/g, " ").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
 function base64(bytes: Uint8Array) {
@@ -23,17 +23,18 @@ export function createReportPdf(fonts: PdfFonts, landscape = false) {
 }
 
 /** Append to a fresh page; the book renderer can supply one global page count. */
-export function appendReportPages(doc: jsPDF, model: ReportDocument, pageNumbers = true) {
+export function appendReportPages(doc: jsPDF, model: ReportDocument, pageNumbers = true, logo?: Uint8Array) {
   const startPage = doc.getNumberOfPages();
   doc.setPage(startPage);
   const width = doc.internal.pageSize.getWidth(), height = doc.internal.pageSize.getHeight(), margin = 15, contentWidth = width - margin * 2;
   const bottom = height - 21;
+  const headerWidth = contentWidth - (logo ? 24 : 0);
   doc.setFontSize(10);
-  const businessLines: string[] = doc.splitTextToSize(clean(model.business.toUpperCase()), contentWidth);
+  const businessLines: string[] = doc.splitTextToSize(clean(model.business.toUpperCase()), headerWidth);
   doc.setFontSize(15);
-  const titleLines: string[] = doc.splitTextToSize(clean(model.title), contentWidth);
+  const titleLines: string[] = doc.splitTextToSize(clean(model.title), headerWidth);
   doc.setFontSize(8.7);
-  const periodLines: string[] = doc.splitTextToSize(clean(model.period), contentWidth);
+  const periodLines: string[] = doc.splitTextToSize(clean(model.period), headerWidth);
   const top = 14 + businessLines.length * 4.5 + 2 + titleLines.length * 6 + 1 + periodLines.length * 4 + 10;
   let y = top + 3;
 
@@ -120,6 +121,7 @@ export function appendReportPages(doc: jsPDF, model: ReportDocument, pageNumbers
   const pages = doc.getNumberOfPages();
   for (let page = startPage; page <= pages; page++) {
     doc.setPage(page);
+    if (logo) doc.addImage(logo, "PNG", width - margin - 18, 10, 18, 18, "garda-official-logo", "FAST");
     doc.setFont("TerraceReport", "bold"); doc.setFontSize(10); doc.setTextColor(ink);
     let headerY = 14;
     doc.text(businessLines, margin, headerY, { lineHeightFactor: 1.27 });
@@ -145,16 +147,16 @@ export function appendReportPages(doc: jsPDF, model: ReportDocument, pageNumbers
 export function renderReportPdf(model: ReportDocument, fonts: PdfFonts) {
   const doc = createReportPdf(fonts, model.landscape);
   doc.setProperties({ title: model.title + " | " + model.business, subject: model.period + " | " + model.status, author: model.business, creator: "Garda Keuangan" });
-  appendReportPages(doc, model);
+  appendReportPages(doc, model, true, fonts.logo);
   return new Uint8Array(doc.output("arraybuffer"));
 }
 
 let fontRequest: Promise<PdfFonts> | undefined;
 export function loadReportFonts() {
-  fontRequest ??= Promise.all(["regular", "bold"].map(async weight => {
-    const response = await fetch("/fonts/terrace-report-" + weight + ".ttf");
-    if (!response.ok) throw new Error("Font PDF belum dapat dimuat. Periksa koneksi lalu coba lagi.");
+  fontRequest ??= Promise.all(["/fonts/terrace-report-regular.ttf", "/fonts/terrace-report-bold.ttf", "/brand/garda-report-logo-v1.png"].map(async path => {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error("Aset PDF belum dapat dimuat. Periksa koneksi lalu coba lagi.");
     return new Uint8Array(await response.arrayBuffer());
-  })).then(([regular, bold]) => ({ regular, bold })).catch(error => { fontRequest = undefined; throw error; });
+  })).then(([regular, bold, logo]) => ({ regular, bold, logo })).catch(error => { fontRequest = undefined; throw error; });
   return fontRequest;
 }

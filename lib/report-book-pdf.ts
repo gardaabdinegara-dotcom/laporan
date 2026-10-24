@@ -26,8 +26,9 @@ export function renderAnnualReportPdf(model: AnnualReport, fonts: PdfFonts) {
     doc.text(lines, x, y, { lineHeightFactor: 1.36 });
     return y + lines.length * leading;
   }
-  function common() {
-    const end = paragraph(model.business.toUpperCase(), 16, 9.5, green, margin, content, true);
+  function common(showLogo = true) {
+    if (fonts.logo && showLogo) doc.addImage(fonts.logo, "PNG", width - margin - 12, 10, 12, 12, "garda-official-logo", "FAST");
+    const end = paragraph(model.business.toUpperCase(), 16, 9.5, green, margin, content - (fonts.logo && showLogo ? 18 : 0), true);
     doc.setDrawColor(green); doc.setLineWidth(.6); doc.line(margin, end + 2, width - margin, end + 2);
     return end + 15;
   }
@@ -44,7 +45,8 @@ export function renderAnnualReportPdf(model: AnnualReport, fonts: PdfFonts) {
   }
 
   // Cover. The contents have their own page so long report names stay readable.
-  let y = common() + 13;
+  let y = common(false) + 13;
+  if (fonts.logo) doc.addImage(fonts.logo, "PNG", width - margin - 33, y - 12, 33, 33, "garda-official-logo", "FAST");
   label("LAPORAN", margin, y, 29, true); y += 12;
   label("KEUANGAN", margin, y, 29, true); y += 17;
   label("Tahun buku " + model.year, margin, y, 25, true, green); y += 10;
@@ -138,7 +140,7 @@ export function renderAnnualReportPdf(model: AnnualReport, fonts: PdfFonts) {
   };
   for (const section of model.sections) {
     doc.addPage("a4", section.landscape ? "landscape" : "portrait");
-    locations.push({ title: section.title, subtitle: subtitles[section.kind], ...appendReportPages(doc, section, false) });
+    locations.push({ title: section.title, subtitle: subtitles[section.kind], ...appendReportPages(doc, section, false, fonts.logo) });
   }
 
   doc.setPage(2); y = common();

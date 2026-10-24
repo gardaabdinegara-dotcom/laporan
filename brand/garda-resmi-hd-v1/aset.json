@@ -1,0 +1,73 @@
+{
+  "source": "WhatsApp Image 2026-10-23 at 07.51.57.jpeg",
+  "sourceSha256": "d7a92f791f5b6716df4817f78a8a3a602db4bd52f11f9d019062c12ca9db5f00",
+  "native": {
+    "format": "png",
+    "mediaType": "image/png",
+    "size": 2057426,
+    "width": 1254,
+    "height": 1254,
+    "space": "srgb",
+    "channels": 4,
+    "depth": "uchar",
+    "density": 72,
+    "isProgressive": false,
+    "isPalette": false,
+    "bitsPerSample": 8,
+    "hasProfile": false,
+    "hasAlpha": true,
+    "autoOrient": {
+      "width": 1254,
+      "height": 1254
+    }
+  },
+  "delivery": {
+    "width": 2048,
+    "height": 2048,
+    "note": "Resampled from the AI reconstruction; generated native file is preserved separately.",
+    "sha256": "8897cd9c9465d1cfd0a4f413ca00cac57a960d8ddee823e400134d45effbeb73"
+  },
+  "tool": "built-in imagegen",
+  "created": "2026-10-24",
+  "variants": [
+    {
+      "name": "garda-report-logo-v1.png",
+      "size": 256,
+      "bytes": 105678
+    },
+    {
+      "name": "garda-icon-96-v1.png",
+      "size": 96,
+      "bytes": 18063
+    },
+    {
+      "name": "garda-icon-192-v1.png",
+      "size": 192,
+      "bytes": 59139
+    },
+    {
+      "name": "garda-icon-512-v1.png",
+      "size": 512,
+      "bytes": 375072
+    },
+    {
+      "name": "garda-apple-touch-v1.png",
+      "size": 180,
+      "bytes": 52183
+    },
+    {
+      "name": "garda-logo-192-v1.webp",
+      "size": 192,
+      "bytes": 19696
+    },
+    {
+      "name": "garda-favicon-v1.ico",
+      "sizes": [
+        16,
+        32,
+        48
+      ],
+      "bytes": 9557
+    }
+  ]
+}
